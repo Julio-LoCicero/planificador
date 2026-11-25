@@ -1,1 +1,1468 @@
-#hola mundo
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planificador Ciencia Política - FCS UNC</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        fcs: {
+                            50: '#fff1f3',
+                            100: '#ffe4e8',
+                            200: '#fecdd6',
+                            500: '#e11d48',
+                            600: '#be123c',
+                            700: '#9f1239',
+                            800: '#881337',
+                            900: '#4c0519',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.45);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(107, 114, 128, 0.75);
+        }
+        .card-transition {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .highlight-prereq {
+            box-shadow: 0 0 0 3px #f59e0b !important;
+            transform: translateY(-2px);
+        }
+        .highlight-unlocks {
+            box-shadow: 0 0 0 3px #6366f1 !important;
+            transform: translateY(-2px);
+        }
+        .highlight-selected {
+            box-shadow: 0 0 0 3px #e11d48 !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased selection:bg-fcs-600 selection:text-white min-h-screen flex flex-col">
+
+    <!-- Contenedor de Notificaciones Toast -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Barra Superior -->
+    <header class="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-wrap items-center justify-between py-3.5 gap-3">
+                <!-- Identidad Institucional -->
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-fcs-600 to-rose-800 flex items-center justify-center text-white shadow-md shadow-rose-600/20">
+                        <i class="fa-solid fa-landmark-dome text-lg"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h1 class="font-display text-lg sm:text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">Licenciatura en Ciencia Política</h1>
+                            <span class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-fcs-50 text-fcs-700 dark:bg-fcs-900/60 dark:text-fcs-200 border border-fcs-200 dark:border-fcs-800">FCS • UNC</span>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Mapa de Correlativas y Seguimiento Académico</p>
+                    </div>
+                </div>
+
+                <!-- Botones de Exportación, Importación y Tema -->
+                <div class="flex items-center gap-2 flex-wrap">
+                    <!-- Exportar CSV -->
+                    <button onclick="exportCSV()" class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold transition flex items-center gap-1.5 shadow-sm" title="Descargar planilla CSV compatible con Excel y Google Sheets">
+                        <i class="fa-solid fa-file-export"></i>
+                        <span>Exportar CSV</span>
+                    </button>
+
+                    <!-- Importar CSV -->
+                    <label class="px-3 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs sm:text-sm font-semibold transition flex items-center gap-1.5 shadow-sm cursor-pointer" title="Cargar progreso desde un archivo CSV exportado previamente">
+                        <i class="fa-solid fa-file-import"></i>
+                        <span>Importar CSV</span>
+                        <input type="file" id="import-csv-file" accept=".csv,text/csv" class="hidden" onchange="importCSV(event)">
+                    </label>
+
+                    <!-- Menú secundario JSON / Reset -->
+                    <div class="flex items-center gap-1.5 pl-1 border-l border-slate-200 dark:border-slate-700">
+                        <button onclick="exportJSON()" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium transition border border-slate-200 dark:border-slate-700" title="Descargar respaldo JSON">
+                            <i class="fa-solid fa-download"></i>
+                        </button>
+
+                        <label class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium transition cursor-pointer border border-slate-200 dark:border-slate-700" title="Importar respaldo JSON">
+                            <i class="fa-solid fa-upload"></i>
+                            <input type="file" id="import-json-file" accept=".json" class="hidden" onchange="importJSON(event)">
+                        </label>
+
+                        <button onclick="openResetModal()" class="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 transition border border-rose-200 dark:border-rose-800/60" title="Reiniciar todos los datos">
+                            <i class="fa-solid fa-rotate-left"></i>
+                        </button>
+
+                        <button onclick="toggleDarkMode()" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-amber-400 transition border border-slate-200 dark:border-slate-700" title="Cambiar modo claro/oscuro">
+                            <i class="fa-solid fa-moon dark:hidden"></i>
+                            <i class="fa-solid fa-sun hidden dark:inline"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Panel de KPIs e Hitos del Plan de Estudios -->
+        <section aria-label="Resumen de Progreso" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- KPI 1: Avance General de Carrera -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Avance Total Carrera</p>
+                        <div class="flex items-baseline gap-2 mt-1">
+                            <span id="kpi-total-percent" class="font-display text-3xl font-extrabold text-slate-900 dark:text-white">0%</span>
+                            <span id="kpi-total-detail" class="text-xs font-medium text-slate-500 dark:text-slate-400">0 / 39 espacios</span>
+                        </div>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-fcs-50 dark:bg-fcs-950/70 text-fcs-600 dark:text-fcs-400 flex items-center justify-center">
+                        <i class="fa-solid fa-graduation-cap text-lg"></i>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                        <div id="kpi-total-bar" class="bg-gradient-to-r from-fcs-600 to-rose-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI 2: Promedio General -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Promedio General</p>
+                        <div class="flex items-baseline gap-2 mt-1">
+                            <span id="kpi-avg" class="font-display text-3xl font-extrabold text-slate-900 dark:text-white">-</span>
+                            <span id="kpi-avg-count" class="text-xs font-medium text-slate-500 dark:text-slate-400">Sin notas numéricas</span>
+                        </div>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                        <i class="fa-solid fa-star text-lg"></i>
+                    </div>
+                </div>
+                <div class="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                    <span class="text-slate-500 dark:text-slate-400">Ciclo Inicial Común (CIC):</span>
+                    <span id="kpi-cic-badge" class="font-bold text-slate-700 dark:text-slate-200">0 / 16 aprobadas</span>
+                </div>
+            </div>
+
+            <!-- KPI 3: Hitos Ciclo Formación Específica (8° y 10° Cuatrimestre) -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-1">
+                    <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Hitos de Cursado (CFE)</p>
+                    <span id="kpi-cfe-count" class="text-xs font-bold text-fcs-600 dark:text-fcs-400">0 reg/aprob</span>
+                </div>
+                <div class="space-y-2 text-xs mt-1">
+                    <div id="milestone-8c" class="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
+                        <span class="font-medium">8° Cuat. (≥ 6 CFE):</span>
+                        <span class="font-bold text-slate-500">Pendiente</span>
+                    </div>
+                    <div id="milestone-10c" class="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
+                        <span class="font-medium">10° Cuat. (CIC + Idioma + 8 CFE):</span>
+                        <span class="font-bold text-slate-500">Pendiente</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI 4: Contadores de Estado -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Estado de Asignaturas</p>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="flex items-center justify-between p-2 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/50">
+                        <span class="text-emerald-800 dark:text-emerald-300 font-medium">Aprobadas</span>
+                        <span id="stat-approved" class="font-bold text-emerald-700 dark:text-emerald-400 text-sm">0</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2 rounded-xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/50">
+                        <span class="text-amber-800 dark:text-amber-300 font-medium">Regulares</span>
+                        <span id="stat-regular" class="font-bold text-amber-700 dark:text-amber-400 text-sm">0</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2 rounded-xl bg-sky-50/80 dark:bg-sky-950/40 border border-sky-100 dark:border-sky-900/50">
+                        <span class="text-sky-800 dark:text-sky-300 font-medium">Cursando</span>
+                        <span id="stat-taking" class="font-bold text-sky-700 dark:text-sky-400 text-sm">0</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2 rounded-xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50">
+                        <span class="text-indigo-800 dark:text-indigo-300 font-medium">Habilitadas</span>
+                        <span id="stat-unlocked" class="font-bold text-indigo-700 dark:text-indigo-400 text-sm">0</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Barra de Búsqueda, Filtros y Selector de Vista -->
+        <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+            <div class="flex flex-col lg:flex-row gap-3 justify-between items-stretch lg:items-center">
+                <!-- Buscador -->
+                <div class="relative flex-1 max-w-md">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input type="text" id="search-input" placeholder="Buscar materia o código (ej: 610, Teoría Política, Estadística)..." class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-fcs-500 transition">
+                </div>
+
+                <!-- Filtros y Vista -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <select id="status-filter" class="px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-fcs-500">
+                        <option value="ALL">Estado: Todos</option>
+                        <option value="APROBADA">✅ Aprobadas</option>
+                        <option value="REGULAR">🟡 Regulares (Debe final)</option>
+                        <option value="CURSANDO">🔵 Cursando actualmente</option>
+                        <option value="HABILITADA">🟣 Habilitadas para cursar</option>
+                        <option value="BLOQUEADA">🔒 Bloqueadas por correlativas</option>
+                        <option value="CURSADA_SIN_APROBAR">📝 Cursadas (Sin aprobar)</option>
+                    </select>
+
+                    <select id="year-filter" class="px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-fcs-500">
+                        <option value="ALL">Año cursado/aprobado: Todos</option>
+                    </select>
+
+                    <!-- Selector Malla / Tabla -->
+                    <div class="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-1 border border-slate-200 dark:border-slate-700">
+                        <button id="view-cards-btn" onclick="setViewMode('cards')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-700 text-fcs-600 dark:text-fcs-300 shadow-sm transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-grip"></i> Mapa
+                        </button>
+                        <button id="view-table-btn" onclick="setViewMode('table')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-table-list"></i> Tabla
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestañas por Ciclo / Año -->
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1" id="cycle-tabs">
+                <button data-filter="ALL" class="cycle-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-fcs-600 text-white shadow-sm transition whitespace-nowrap">Todo el Plan</button>
+                <button data-filter="INTRO" class="cycle-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">Ciclo Introductorio</button>
+                <button data-filter="YEAR_1" class="cycle-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">1° Año (CIC)</button>
+                <button data-filter="YEAR_2" class="cycle-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">2° Año (CIC + Optativas)</button>
+                <button data-filter="YEAR_3" class="cycle-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">3° Año (CFE)</button>
+                <button data-filter="YEAR_4" class="cycle-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">4° Año (CFE)</button>
+                <button data-filter="YEAR_5" class="cycle-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">5° Año (CFP) y Trabajo Final</button>
+            </div>
+
+            <!-- Leyenda -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
+                <div class="flex flex-wrap items-center gap-3">
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Aprobada</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Regular</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span> Cursando</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span> Habilitada</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span> Bloqueada</span>
+                </div>
+                <div class="hidden md:flex items-center gap-2 text-slate-400">
+                    <i class="fa-solid fa-circle-info text-fcs-500"></i>
+                    <span>Pasá el cursor sobre una materia para resaltar <strong class="text-amber-500">correlativas previas</strong> y las que <strong class="text-indigo-500">destraba</strong>. Hacé clic para editar.</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contenedor Principal de Materias -->
+        <section id="subjects-container" class="space-y-8 pb-12"></section>
+
+    </main>
+
+    <!-- Modal de Edición de Asignatura -->
+    <div id="edit-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
+            <!-- Cabecera Modal -->
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span id="modal-subject-code" class="px-2 py-0.5 text-xs font-bold rounded-md bg-fcs-100 text-fcs-800 dark:bg-fcs-900 dark:text-fcs-200">(610)</span>
+                        <span id="modal-subject-meta" class="text-xs font-medium text-slate-500 dark:text-slate-400">1° Año • 1° Cuatrimestre</span>
+                    </div>
+                    <h2 id="modal-subject-name" class="font-display text-lg font-bold text-slate-900 dark:text-white mt-1 leading-snug">Fundamentos de la Ciencia Política</h2>
+                </div>
+                <button onclick="closeEditModal()" class="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Formulario Modal -->
+            <form id="edit-subject-form" class="p-6 space-y-5">
+                <input type="hidden" id="modal-subject-id">
+
+                <!-- Detalle de Correlativas y Reglas Especiales -->
+                <div id="modal-prereq-box" class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs space-y-2"></div>
+
+                <!-- Estado Académico -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Estado de la Asignatura</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="subject-status" value="PENDIENTE" class="peer sr-only">
+                            <div class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-center text-xs font-semibold peer-checked:bg-slate-800 peer-checked:text-white dark:peer-checked:bg-slate-200 dark:peer-checked:text-slate-900 peer-checked:border-transparent transition">
+                                <i class="fa-regular fa-circle block text-base mb-1"></i>
+                                Pendiente
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="subject-status" value="CURSANDO" class="peer sr-only">
+                            <div class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-center text-xs font-semibold peer-checked:bg-sky-600 peer-checked:text-white peer-checked:border-transparent transition">
+                                <i class="fa-solid fa-book-open block text-base mb-1"></i>
+                                Cursando
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="subject-status" value="REGULAR" class="peer sr-only">
+                            <div class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-center text-xs font-semibold peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-transparent transition">
+                                <i class="fa-solid fa-clock block text-base mb-1"></i>
+                                Regular
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="subject-status" value="APROBADA" class="peer sr-only">
+                            <div class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-center text-xs font-semibold peer-checked:bg-emerald-600 peer-checked:text-white peer-checked:border-transparent transition">
+                                <i class="fa-solid fa-circle-check block text-base mb-1"></i>
+                                Aprobada
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Checkbox: ¿Ya la cursaste? -->
+                <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                    <div>
+                        <span class="text-sm font-semibold text-slate-800 dark:text-slate-200 block">¿Ya la cursaste?</span>
+                        <span class="text-xs text-slate-500 dark:text-slate-400">Se marca automáticamente si estás cursando, regular o aprobada.</span>
+                    </div>
+                    <input type="checkbox" id="modal-taken-checkbox" class="w-5 h-5 rounded text-fcs-600 focus:ring-fcs-500 border-slate-300 cursor-pointer">
+                </div>
+
+                <!-- Nota Final y Año -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="modal-grade" class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Nota Final (1 a 10)</label>
+                        <input type="text" id="modal-grade" placeholder="Ej: 8, 9 o Promoción" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-fcs-500">
+                        <p class="text-[11px] text-slate-400 mt-1">Número (1-10) o texto (ej. Aprobado).</p>
+                    </div>
+                    <div>
+                        <label for="modal-year" class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Año en que la hiciste</label>
+                        <input type="number" id="modal-year" min="2015" max="2035" placeholder="Ej: 2025" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-fcs-500">
+                        <p class="text-[11px] text-slate-400 mt-1">Año de cursado o aprobación.</p>
+                    </div>
+                </div>
+
+                <!-- Observaciones -->
+                <div>
+                    <label for="modal-notes" class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Observaciones / Cátedra / Turno</label>
+                    <textarea id="modal-notes" rows="2" placeholder="Ej: Cátedra A, promocionada, rendir en mesa de julio..." class="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-fcs-500"></textarea>
+                </div>
+
+                <!-- Botones -->
+                <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" onclick="closeEditModal()" class="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Cancelar</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-fcs-600 hover:bg-fcs-700 text-white shadow-md shadow-fcs-600/20 transition flex items-center gap-2">
+                        <i class="fa-solid fa-check"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación de Reinicio -->
+    <div id="reset-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
+            <div class="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="font-display text-lg font-bold text-slate-900 dark:text-white">¿Reiniciar todo el progreso?</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Se borrarán todas las materias aprobadas, regulares, notas y años registrados. Podés tocar <strong>Exportar CSV</strong> antes para guardar una copia.</p>
+            <div class="flex items-center justify-end gap-2 pt-2">
+                <button onclick="closeResetModal()" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Cancelar</button>
+                <button onclick="confirmReset()" class="px-4 py-2 rounded-xl text-sm font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition">Sí, borrar todo</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * PLAN DE ESTUDIOS OFICIAL: LICENCIATURA EN CIENCIA POLÍTICA — FCS (UNC)
+         * Basado íntegramente en el Mapa de Correlativas oficial adjunto.
+         */
+        const CURRICULUM_DATA = [
+            // ================= CICLO INTRODUCTORIO (NIVELACIÓN) =================
+            { id: '609', code: '609', cycle: 'INTRO', cycleName: 'Ciclo Introductorio', year: 1, term: 'Introductorio', groupKey: 'INTRO', isElective: false, countsForCIC: true, name: 'Introducción a la Ciencia Política', reqs: [] },
+            { id: '600', code: '600', cycle: 'INTRO', cycleName: 'Ciclo Introductorio', year: 1, term: 'Introductorio', groupKey: 'INTRO', isElective: false, countsForCIC: true, name: 'Introducción a los Estudios Universitarios de las Ciencias Sociales', reqs: [] },
+
+            // ================= CICLO INICIAL COMÚN (CIC) - 1° AÑO =================
+            // 1° Cuatrimestre
+            { id: '611', code: '611', cycle: 'CIC', cycleName: 'Ciclo Inicial Común (CIC)', year: 1, term: '1° Cuatrimestre', groupKey: 'Y1_T1', isElective: false, countsForCIC: true, name: 'Sociología Sistemática', reqs: ['609', '600'] },
+            { id: '610', code: '610', cycle: 'CIC', cycleName: 'Ciclo Inicial Común (CIC)', year: 1, term: '1° Cuatrimestre', groupKey: 'Y1_T1', isElective: false, countsForCIC: true, name: 'Fundamentos de la Ciencia Política', reqs: ['609', '600'] },
+            { id: '616', code: '616', cycle: 'CIC', cycleName: 'Ciclo Inicial Común (CIC)', year: 1, term: '1° Cuatrimestre', groupKey: 'Y1_T1', isElective: false, countsForCIC: true, name: 'Economía Política I', reqs: ['609', '600'] },
+            { id: '612', code: '612', cycle: 'CIC', cycleName: 'Ciclo Inicial Común (CIC)', year: 1, term: '1° Cuatrimestre', groupKey: 'Y1_T1', isElective: false, countsForCIC: true, name: 'Introducción al conocimiento de las Ciencias Sociales', reqs: ['609', '600'] },
+            { id: '618', code: '618', cycle: 'CIC', cycleName: 'Ciclo Inicial Común (CIC)', year: 1, term: '1° Cuatrimestre', groupKey: 'Y1_T1', isElective: false, countsForCIC: true, name: 'Taller de lecto escritura académica inicial para Ciencias Sociales', reqs: ['609', '600'] },
+            { id: '613', code: '613', cycle: 'CIC', cycleName: 'Ciclo Inicial Común (CIC)', year: 1, term: '1° Cuatrimestre', groupKey: 'Y1_T1', isElective: false, countsForCIC: true, name: 'Historia Social y Política I', reqs: ['609', '600'] },
+
+            // 2° Cuatrimestre
+            { id: '615', code: '615', cycle: 'CIC', cycleName: 'Ciclo Inicial Común (CIC)', year: 1, term: '2° Cuatrimestre', groupKey: 'Y1_T2', isElective: false, countsForCIC: true, name: 'Teoría Sociológica I', reqs: ['611'] },
+            { id: '614', code: '614', cycle: 'CIC', cycleName: 'Ciclo Inicial Común (CIC)', year: 1, term: '2° Cuatrimestre', groupKey: 'Y1_T2', isElective: false, countsForCIC: true, name: 'Teoría Política I', reqs: ['610'] },
+            { id: '623', code: '623', cycle: 'CIC', cycleName: 'Ciclo Inicial Común (CIC)', year: 1, term: '2° Cuatrimestre', groupKey: 'Y1_T2', isElective: false, countsForCIC: true, name: 'Economía Política II', reqs: ['616'] },
+            { id: '617', code: '617', cycle: 'CIC', cycleName: 'Ciclo Inicial Común (CIC)', year: 1, term: '2° Cuatrimestre', groupKey: 'Y1_T2', isElective: false, countsForCIC: true, name: 'Historia Social y Política II', reqs: ['613'] },
+
+            // ================= CICLO INICIAL COMÚN (CIC) - 2° AÑO =================
+            // 3° Cuatrimestre
+            { id: '621', code: '621', cycle: 'CIC', cycleName: 'Ciclo Inicial Común (CIC)', year: 2, term: '3° Cuatrimestre', groupKey: 'Y2_T3', isElective: false, countsForCIC: true, name: 'Teoría Sociológica II', reqs: ['615'] },
+            { id: '620', code: '620', cycle: 'CIC', cycleName: 'Ciclo Inicial Común (CIC)', year: 2, term: '3° Cuatrimestre', groupKey: 'Y2_T3', isElective: false, countsForCIC: true, name: 'Teoría Política II', reqs: ['614'] },
+            { id: '622', code: '622', cycle: 'CIC', cycleName: 'Ciclo Inicial Común (CIC)', year: 2, term: '3° Cuatrimestre', groupKey: 'Y2_T3', isElective: false, countsForCIC: true, name: 'Historia Social y Política III', reqs: ['617'] },
+
+            // 4° Cuatrimestre
+            { id: '624', code: '624', cycle: 'CIC', cycleName: 'Ciclo Inicial Común (CIC)', year: 2, term: '4° Cuatrimestre', groupKey: 'Y2_T4', isElective: false, countsForCIC: true, name: 'Teoría Sociológica III', reqs: ['621'] },
+            { id: '625', code: '625', cycle: 'CIC', cycleName: 'Ciclo Inicial Común (CIC)', year: 2, term: '4° Cuatrimestre', groupKey: 'Y2_T4', isElective: false, countsForCIC: true, name: 'Teoría Política III', reqs: ['620'] },
+            { id: '627', code: '627', cycle: 'CIC', cycleName: 'Ciclo Inicial Común (CIC)', year: 2, term: '4° Cuatrimestre', groupKey: 'Y2_T4', isElective: false, countsForCIC: true, name: 'Metodología de la Investigación Social I', reqs: ['612'] },
+
+            // Optativas 4° Cuatrimestre (se elige al menos 1)
+            { id: '662', code: '662', cycle: 'CIC', cycleName: 'Optativa (4° Cuatrimestre)', year: 2, term: '4° Cuatrimestre (Optativa)', groupKey: 'Y2_OPT', isElective: true, countsForCIC: false, name: 'Antropología Sociocultural', reqs: ['609', '600'] },
+            { id: '661', code: '661', cycle: 'CIC', cycleName: 'Optativa (4° Cuatrimestre)', year: 2, term: '4° Cuatrimestre (Optativa)', groupKey: 'Y2_OPT', isElective: true, countsForCIC: false, name: 'Filosofía Social y Política', reqs: ['609', '600'] },
+            { id: '660', code: '660', cycle: 'CIC', cycleName: 'Optativa (4° Cuatrimestre)', year: 2, term: '4° Cuatrimestre (Optativa)', groupKey: 'Y2_OPT', isElective: true, countsForCIC: false, name: 'Procesos Políticos Internacionales', reqs: ['609', '600'] },
+
+            // ================= CICLO DE FORMACIÓN ESPECÍFICA (CFE) - 3° AÑO =================
+            // 5° Cuatrimestre
+            { id: '630', code: '630', cycle: 'CFE', cycleName: 'Ciclo de Formación Específica (CFE)', year: 3, term: '5° Cuatrimestre', groupKey: 'Y3_T5', isElective: false, countsForCFE: true, name: 'Teoría del Estado y sus Transformaciones Históricas', reqs: ['625'] },
+            { id: '633', code: '633', cycle: 'CFE', cycleName: 'Ciclo de Formación Específica (CFE)', year: 3, term: '5° Cuatrimestre', groupKey: 'Y3_T5', isElective: false, countsForCFE: true, name: 'Derecho Constitucional', reqs: ['625'] },
+            { id: '631', code: '631', cycle: 'CFE', cycleName: 'Ciclo de Formación Específica (CFE)', year: 3, term: '5° Cuatrimestre', groupKey: 'Y3_T5', isElective: false, countsForCFE: true, name: 'Metodología de la Investigación Social II', reqs: ['627'] },
+            { id: '632', code: '632', cycle: 'CFE', cycleName: 'Ciclo de Formación Específica (CFE)', year: 3, term: '5° Cuatrimestre', groupKey: 'Y3_T5', isElective: false, countsForCFE: true, name: 'Estadística I', reqs: ['627'] },
+
+            // 6° Cuatrimestre
+            { id: '634', code: '634', cycle: 'CFE', cycleName: 'Ciclo de Formación Específica (CFE)', year: 3, term: '6° Cuatrimestre', groupKey: 'Y3_T6', isElective: false, countsForCFE: true, name: 'Teoría de la Democracia y la Ciudadanía', reqs: ['630'] },
+            { id: '636', code: '636', cycle: 'CFE', cycleName: 'Ciclo de Formación Específica (CFE)', year: 3, term: '6° Cuatrimestre', groupKey: 'Y3_T6', isElective: false, countsForCFE: true, name: 'Instituciones de Gobierno y Administración Pública', reqs: ['633'] },
+            { id: '635', code: '635', cycle: 'CFE', cycleName: 'Ciclo de Formación Específica (CFE)', year: 3, term: '6° Cuatrimestre', groupKey: 'Y3_T6', isElective: false, countsForCFE: true, name: 'Estadística II', reqs: ['632'] },
+            { id: '637', code: '637', cycle: 'CFE', cycleName: 'Ciclo de Formación Específica (CFE)', year: 3, term: '6° Cuatrimestre', groupKey: 'Y3_T6', isElective: false, countsForCFE: true, name: 'Taller de Técnicas Cuantitativas', reqs: ['632'] },
+
+            // ================= CICLO DE FORMACIÓN ESPECÍFICA (CFE) - 4° AÑO =================
+            // 7° Cuatrimestre
+            { id: '640', code: '640', cycle: 'CFE', cycleName: 'Ciclo de Formación Específica (CFE)', year: 4, term: '7° Cuatrimestre', groupKey: 'Y4_T7', isElective: false, countsForCFE: true, name: 'Partidos Políticos', reqs: ['634'] },
+            { id: '641', code: '641', cycle: 'CFE', cycleName: 'Ciclo de Formación Específica (CFE)', year: 4, term: '7° Cuatrimestre', groupKey: 'Y4_T7', isElective: false, countsForCFE: true, name: 'Procesos Políticos Latinoamericanos', reqs: ['636'] },
+            { id: '643', code: '643', cycle: 'CFE', cycleName: 'Ciclo de Formación Específica (CFE)', year: 4, term: '7° Cuatrimestre', groupKey: 'Y4_T7', isElective: false, countsForCFE: true, name: 'Taller de Técnicas Cualitativas', reqs: ['631'] },
+            { id: '642', code: '642', cycle: 'CFE', cycleName: 'Ciclo de Formación Específica (CFE)', year: 4, term: '7° Cuatrimestre', groupKey: 'Y4_T7', isElective: false, countsForCFE: true, name: 'Derechos Humanos', reqs: ['633'] },
+
+            // 8° Cuatrimestre (Regla especial: >= 6 materias regularizadas o aprobadas del CFE)
+            { id: '644', code: '644', cycle: 'CFE', cycleName: 'Ciclo de Formación Específica (CFE)', year: 4, term: '8° Cuatrimestre', groupKey: 'Y4_T8', isElective: false, countsForCFE: true, specialRule: 'TERM_8_CFE_6', name: 'Seminario Análisis Político', reqs: [] },
+            { id: '645', code: '645', cycle: 'CFE', cycleName: 'Ciclo de Formación Específica (CFE)', year: 4, term: '8° Cuatrimestre', groupKey: 'Y4_T8', isElective: false, countsForCFE: true, specialRule: 'TERM_8_CFE_6', name: 'Seminario Opinión Pública y Comunicación Política', reqs: [] },
+            { id: '646', code: '646', cycle: 'CFE', cycleName: 'Ciclo de Formación Específica (CFE)', year: 4, term: '8° Cuatrimestre', groupKey: 'Y4_T8', isElective: false, countsForCFE: true, specialRule: 'TERM_8_CFE_6', name: 'Seminario Estudios sobre Regionalización e Integración', reqs: [] },
+            { id: '647', code: '647', cycle: 'CFE', cycleName: 'Ciclo de Formación Específica (CFE)', year: 4, term: '8° Cuatrimestre', groupKey: 'Y4_T8', isElective: false, countsForCFE: true, specialRule: 'TERM_8_CFE_6', name: 'Seminario Sistemas Políticos Comparados', reqs: [] },
+
+            // ================= CICLO DE FORMACIÓN PROFESIONAL (CFP) - 5° AÑO =================
+            // 9° Cuatrimestre
+            { id: '650', code: '650', cycle: 'CFP', cycleName: 'Ciclo de Formación Profesional (CFP)', year: 5, term: '9° Cuatrimestre', groupKey: 'Y5_T9', isElective: false, specialRule: 'TERM_9_CFE_6', name: 'Seminario Políticas Sociales', reqs: [] },
+            { id: '651', code: '651', cycle: 'CFP', cycleName: 'Ciclo de Formación Profesional (CFP)', year: 5, term: '9° Cuatrimestre', groupKey: 'Y5_T9', isElective: false, specialRule: 'TERM_9_CFE_6', name: 'Seminario Teoría y Análisis de las Políticas Públicas', reqs: [] },
+            { id: '652', code: '652', cycle: 'CFP', cycleName: 'Ciclo de Formación Profesional (CFP)', year: 5, term: '9° Cuatrimestre', groupKey: 'Y5_T9', isElective: false, specialRule: 'TERM_9_CFE_6', name: 'Seminario Política Comparada', reqs: [] },
+            { id: '653', code: '653', cycle: 'CFP', cycleName: 'Ciclo de Formación Profesional (CFP)', year: 5, term: '9° Cuatrimestre', groupKey: 'Y5_T9', isElective: false, specialRule: 'TERM_9_CFE_6', name: 'Taller Formación y Evaluación de Proyectos', reqs: [] },
+
+            // 10° Cuatrimestre (Regla especial: Nivelación + CIC 16 aprobadas + Idioma 666 aprobado + >= 8 CFE reg/aprob)
+            { id: '654', code: '654', cycle: 'CFP', cycleName: 'Ciclo de Formación Profesional (CFP)', year: 5, term: '10° Cuatrimestre', groupKey: 'Y5_T10', isElective: false, specialRule: 'TERM_10_FULL', name: 'Seminario Lecturas orientadas', reqs: [] },
+            { id: '655', code: '655', cycle: 'CFP', cycleName: 'Ciclo de Formación Profesional (CFP)', year: 5, term: '10° Cuatrimestre', groupKey: 'Y5_T10', isElective: false, specialRule: 'TERM_10_FULL', name: 'Taller Trabajo Final', reqs: [] },
+
+            // ================= TRANSVERSALES Y TRABAJO FINAL DE GRADO =================
+            { id: '666', code: '666', cycle: 'TRANSVERSAL', cycleName: 'Requisito Transversal', year: 5, term: 'Durante toda la carrera', groupKey: 'FINAL', isElective: false, name: 'Prueba de Suficiencia de Idioma', reqs: [] },
+            { id: '656', code: '656', cycle: 'FINAL', cycleName: 'Trabajo Final de Grado', year: 5, term: 'Cierre de Carrera', groupKey: 'FINAL', isElective: false, specialRule: 'THESIS_656', name: 'Elaboración del Trabajo Final de Licenciatura', reqs: ['654', '655'] }
+        ];
+
+        const SUBJECT_MAP = {};
+        CURRICULUM_DATA.forEach(s => SUBJECT_MAP[s.id] = s);
+
+        // Persistencia
+        const STORAGE_KEY = 'ciencia_politica_unc_tracker_v1';
+        let appState = {
+            records: {}, // { [id]: { status: 'PENDIENTE'|'CURSANDO'|'REGULAR'|'APROBADA', taken: boolean, grade: string, year: number|null, notes: string } }
+            darkMode: false
+        };
+
+        let uiState = {
+            cycleFilter: 'ALL',
+            statusFilter: 'ALL',
+            yearFilter: 'ALL',
+            searchQuery: '',
+            viewMode: 'cards'
+        };
+
+        /**
+         * CARGA Y GUARDADO EN LOCALSTORAGE
+         */
+        function loadState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    appState.records = parsed.records || {};
+                    appState.darkMode = !!parsed.darkMode;
+                } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    appState.darkMode = true;
+                }
+            } catch (e) {
+                console.error('Error al cargar localStorage:', e);
+            }
+            applyTheme();
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+            } catch (e) {
+                console.error('Error al guardar localStorage:', e);
+                showToast('No se pudo guardar en el navegador', 'error');
+            }
+        }
+
+        function applyTheme() {
+            document.documentElement.classList.toggle('dark', appState.darkMode);
+        }
+
+        function toggleDarkMode() {
+            appState.darkMode = !appState.darkMode;
+            applyTheme();
+            saveState();
+        }
+
+        /**
+         * MOTOR DE CORRELATIVAS Y REGLAS DEL MAPA FCS-UNC
+         */
+        function getRecord(id) {
+            return appState.records[id] || {
+                status: 'PENDIENTE',
+                taken: false,
+                grade: '',
+                year: null,
+                notes: ''
+            };
+        }
+
+        function isRegOrApp(id) {
+            const st = getRecord(id).status;
+            return st === 'REGULAR' || st === 'APROBADA';
+        }
+
+        function isApp(id) {
+            return getRecord(id).status === 'APROBADA';
+        }
+
+        function getCareerStats() {
+            // Las 16 asignaturas del Ciclo Introductorio + CIC
+            const cicSubjects = CURRICULUM_DATA.filter(s => s.countsForCIC);
+            const cicApproved = cicSubjects.filter(s => isApp(s.id)).length;
+            const introApproved = isApp('609') && isApp('600');
+
+            // Las 16 asignaturas del Ciclo de Formación Específica (5° a 8° cuatrimestre)
+            const cfeSubjects = CURRICULUM_DATA.filter(s => s.countsForCFE);
+            const cfeRegOrApp = cfeSubjects.filter(s => isRegOrApp(s.id)).length;
+            const cfeApproved = cfeSubjects.filter(s => isApp(s.id)).length;
+
+            // Optativas (al menos 1 aprobada)
+            const optatives = CURRICULUM_DATA.filter(s => s.isElective);
+            const optativesApproved = optatives.filter(s => isApp(s.id)).length;
+
+            // Idioma 666
+            const languageApproved = isApp('666');
+
+            // Todas las materias obligatorias excepto Trabajo Final 656 (incluye 1 optativa requerida)
+            const allMandatoryExceptThesis = CURRICULUM_DATA.filter(s => !s.isElective && s.id !== '656');
+            const allMandatoryApproved = allMandatoryExceptThesis.every(s => isApp(s.id)) && optativesApproved >= 1;
+
+            return {
+                cicTotal: cicSubjects.length, // 16
+                cicApproved,
+                introApproved,
+                cfeTotal: cfeSubjects.length, // 16
+                cfeRegOrApp,
+                cfeApproved,
+                optativesApproved,
+                languageApproved,
+                allMandatoryApproved
+            };
+        }
+
+        function evaluateSubject(subject) {
+            const rec = getRecord(subject.id);
+            const stats = getCareerStats();
+
+            // Correlativas directas (en UNC FCS tener regularizada/aprobada la previa habilita a cursar la siguiente)
+            const missingDirect = subject.reqs.filter(reqId => !isRegOrApp(reqId));
+            let specialReasons = [];
+            let specialMet = true;
+
+            if (subject.specialRule === 'TERM_8_CFE_6' || subject.specialRule === 'TERM_9_CFE_6') {
+                if (stats.cfeRegOrApp < 6) {
+                    specialMet = false;
+                    specialReasons.push(`Requiere al menos 6 materias regularizadas o aprobadas del Ciclo de Formación Específica (tenés ${stats.cfeRegOrApp}/6).`);
+                }
+            }
+
+            if (subject.specialRule === 'TERM_10_FULL') {
+                if (!stats.introApproved) {
+                    specialMet = false;
+                    specialReasons.push('Falta aprobar el Ciclo Introductorio (609 y 600).');
+                }
+                if (stats.cicApproved < 16) {
+                    specialMet = false;
+                    specialReasons.push(`Falta aprobar las 16 asignaturas del Ciclo Inicial Común (tenés ${stats.cicApproved}/16).`);
+                }
+                if (!stats.languageApproved) {
+                    specialMet = false;
+                    specialReasons.push('Falta aprobar Prueba de Suficiencia de Idioma (666).');
+                }
+                if (stats.cfeRegOrApp < 8) {
+                    specialMet = false;
+                    specialReasons.push(`Requiere al menos 8 asignaturas regularizadas o aprobadas del CFE (tenés ${stats.cfeRegOrApp}/8).`);
+                }
+            }
+
+            if (subject.specialRule === 'THESIS_656') {
+                if (!stats.allMandatoryApproved) {
+                    specialMet = false;
+                    specialReasons.push('Para rendir Trabajo Final (656) debés tener aprobadas todas las asignaturas, seminarios, talleres (incluidos 654 y 655), idioma y 1 optativa.');
+                }
+            }
+
+            const canTake = missingDirect.length === 0 && specialMet;
+            let effectiveState = rec.status;
+            if (rec.status === 'PENDIENTE') {
+                effectiveState = canTake ? 'HABILITADA' : 'BLOQUEADA';
+            }
+
+            return {
+                record: rec,
+                effectiveState,
+                canTake,
+                missingDirect,
+                specialReasons
+            };
+        }
+
+        function getDirectDependents(subjectId) {
+            return CURRICULUM_DATA.filter(s => s.reqs.includes(subjectId)).map(s => s.id);
+        }
+
+        /**
+         * ACTUALIZACIÓN DE KPIs E HITOS
+         */
+        function updateKPIs() {
+            const stats = getCareerStats();
+
+            // Total de espacios curriculares requeridos para graduarse: 36 obligatorios/seminarios/idioma/tesis + 1 optativa = 37 espacios
+            const mandatoryCount = CURRICULUM_DATA.filter(s => !s.isElective).length; // 36
+            const totalRequired = mandatoryCount + 1; // 37
+            const mandatoryApproved = CURRICULUM_DATA.filter(s => !s.isElective && isApp(s.id)).length;
+            const optativeCapped = Math.min(stats.optativesApproved, 1);
+            const totalCompleted = mandatoryApproved + optativeCapped;
+            const percent = Math.round((totalCompleted / totalRequired) * 100);
+
+            document.getElementById('kpi-total-percent').textContent = `${percent}%`;
+            document.getElementById('kpi-total-detail').textContent = `${totalCompleted} / ${totalRequired} espacios`;
+            document.getElementById('kpi-total-bar').style.width = `${percent}%`;
+
+            // Promedio General (solo notas numéricas válidas)
+            let sum = 0;
+            let count = 0;
+            let approvedTotal = 0;
+            let regularTotal = 0;
+            let takingTotal = 0;
+            let unlockedTotal = 0;
+
+            CURRICULUM_DATA.forEach(sub => {
+                const ev = evaluateSubject(sub);
+                if (ev.effectiveState === 'APROBADA') {
+                    approvedTotal++;
+                    const numGrade = parseFloat(String(ev.record.grade).replace(',', '.'));
+                    if (!isNaN(numGrade) && numGrade >= 1 && numGrade <= 10) {
+                        sum += numGrade;
+                        count++;
+                    }
+                } else if (ev.effectiveState === 'REGULAR') {
+                    regularTotal++;
+                } else if (ev.effectiveState === 'CURSANDO') {
+                    takingTotal++;
+                } else if (ev.effectiveState === 'HABILITADA') {
+                    unlockedTotal++;
+                }
+            });
+
+            const avgEl = document.getElementById('kpi-avg');
+            const avgCountEl = document.getElementById('kpi-avg-count');
+            if (count > 0) {
+                avgEl.textContent = (sum / count).toFixed(2);
+                avgCountEl.textContent = `Sobre ${count} ${count === 1 ? 'materia con nota' : 'materias con nota'}`;
+            } else {
+                avgEl.textContent = '-';
+                avgCountEl.textContent = 'Sin notas numéricas';
+            }
+
+            // CIC badge
+            document.getElementById('kpi-cic-badge').textContent = `${stats.cicApproved} / 16 aprobadas`;
+
+            // Hitos CFE
+            document.getElementById('kpi-cfe-count').textContent = `${stats.cfeRegOrApp} / 16 reg/aprob`;
+
+            const m8 = document.getElementById('milestone-8c');
+            if (stats.cfeRegOrApp >= 6) {
+                m8.className = 'flex items-center justify-between p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300';
+                m8.innerHTML = `<span class="font-medium">8° Cuat. (≥ 6 CFE):</span><span class="font-bold"><i class="fa-solid fa-check mr-1"></i>Habilitado (${stats.cfeRegOrApp}/6)</span>`;
+            } else {
+                m8.className = 'flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300';
+                m8.innerHTML = `<span class="font-medium">8° Cuat. (≥ 6 CFE):</span><span class="font-bold text-amber-600 dark:text-amber-400">Faltan ${6 - stats.cfeRegOrApp}</span>`;
+            }
+
+            const m10 = document.getElementById('milestone-10c');
+            const term10Ready = stats.cicApproved >= 16 && stats.languageApproved && stats.cfeRegOrApp >= 8;
+            if (term10Ready) {
+                m10.className = 'flex items-center justify-between p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300';
+                m10.innerHTML = `<span class="font-medium">10° Cuat. (CIC+Idioma+8 CFE):</span><span class="font-bold"><i class="fa-solid fa-check mr-1"></i>Habilitado</span>`;
+            } else {
+                m10.className = 'flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300';
+                m10.innerHTML = `<span class="font-medium">10° Cuat. (CIC+Idioma+8 CFE):</span><span class="font-bold text-slate-500">Pendiente</span>`;
+            }
+
+            // Contadores
+            document.getElementById('stat-approved').textContent = approvedTotal;
+            document.getElementById('stat-regular').textContent = regularTotal;
+            document.getElementById('stat-taking').textContent = takingTotal;
+            document.getElementById('stat-unlocked').textContent = unlockedTotal;
+
+            updateYearFilterOptions();
+        }
+
+        function updateYearFilterOptions() {
+            const yearSelect = document.getElementById('year-filter');
+            const prev = yearSelect.value;
+            const years = new Set();
+
+            Object.values(appState.records).forEach(r => {
+                if (r.year) years.add(String(r.year));
+            });
+
+            const sorted = Array.from(years).sort((a, b) => b - a);
+            yearSelect.innerHTML = '<option value="ALL">Año cursado/aprobado: Todos</option>';
+            sorted.forEach(y => {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = `Año ${y}`;
+                yearSelect.appendChild(opt);
+            });
+
+            if (sorted.includes(prev)) {
+                yearSelect.value = prev;
+            } else {
+                uiState.yearFilter = 'ALL';
+            }
+        }
+
+        /**
+         * RENDERIZADO DE TARJETAS Y TABLA
+         */
+        function getFilteredSubjects() {
+            return CURRICULUM_DATA.filter(sub => {
+                const ev = evaluateSubject(sub);
+                const rec = ev.record;
+
+                if (uiState.cycleFilter !== 'ALL') {
+                    if (uiState.cycleFilter === 'INTRO' && sub.cycle !== 'INTRO') return false;
+                    if (uiState.cycleFilter === 'YEAR_1' && !(sub.cycle === 'CIC' && sub.year === 1)) return false;
+                    if (uiState.cycleFilter === 'YEAR_2' && !(sub.cycle === 'CIC' && sub.year === 2)) return false;
+                    if (uiState.cycleFilter === 'YEAR_3' && sub.year !== 3) return false;
+                    if (uiState.cycleFilter === 'YEAR_4' && sub.year !== 4) return false;
+                    if (uiState.cycleFilter === 'YEAR_5' && !(sub.year === 5 || sub.cycle === 'TRANSVERSAL' || sub.cycle === 'FINAL')) return false;
+                }
+
+                if (uiState.statusFilter !== 'ALL') {
+                    if (uiState.statusFilter === 'CURSADA_SIN_APROBAR') {
+                        if (!(rec.taken && rec.status !== 'APROBADA')) return false;
+                    } else if (ev.effectiveState !== uiState.statusFilter) {
+                        return false;
+                    }
+                }
+
+                if (uiState.yearFilter !== 'ALL') {
+                    if (String(rec.year) !== uiState.yearFilter) return false;
+                }
+
+                if (uiState.searchQuery.trim() !== '') {
+                    const q = uiState.searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    const nameNorm = sub.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    const codeNorm = sub.code.toLowerCase();
+                    if (!nameNorm.includes(q) && !codeNorm.includes(q)) return false;
+                }
+
+                return true;
+            });
+        }
+
+        function getBadgeStyle(effectiveState) {
+            switch (effectiveState) {
+                case 'APROBADA':
+                    return {
+                        label: 'Aprobada',
+                        icon: 'fa-circle-check',
+                        cardClass: 'bg-emerald-50/70 dark:bg-emerald-950/25 border-emerald-300 dark:border-emerald-800/80',
+                        badgeClass: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/80 dark:text-emerald-200 border-emerald-200 dark:border-emerald-700',
+                        accentBar: 'bg-emerald-500'
+                    };
+                case 'REGULAR':
+                    return {
+                        label: 'Regular',
+                        icon: 'fa-clock',
+                        cardClass: 'bg-amber-50/70 dark:bg-amber-950/25 border-amber-300 dark:border-amber-800/80',
+                        badgeClass: 'bg-amber-100 text-amber-800 dark:bg-amber-900/80 dark:text-amber-200 border-amber-200 dark:border-amber-700',
+                        accentBar: 'bg-amber-500'
+                    };
+                case 'CURSANDO':
+                    return {
+                        label: 'Cursando',
+                        icon: 'fa-book-open',
+                        cardClass: 'bg-sky-50/70 dark:bg-sky-950/25 border-sky-300 dark:border-sky-800/80',
+                        badgeClass: 'bg-sky-100 text-sky-800 dark:bg-sky-900/80 dark:text-sky-200 border-sky-200 dark:border-sky-700',
+                        accentBar: 'bg-sky-500'
+                    };
+                case 'HABILITADA':
+                    return {
+                        label: 'Habilitada',
+                        icon: 'fa-unlock',
+                        cardClass: 'bg-white dark:bg-slate-900 border-indigo-200 dark:border-indigo-800/70 hover:border-indigo-400 dark:hover:border-indigo-600',
+                        badgeClass: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/70 dark:text-indigo-200 border-indigo-200 dark:border-indigo-700',
+                        accentBar: 'bg-indigo-500'
+                    };
+                default:
+                    return {
+                        label: 'Bloqueada',
+                        icon: 'fa-lock',
+                        cardClass: 'bg-slate-100/75 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 opacity-85 hover:opacity-100',
+                        badgeClass: 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-slate-300 dark:border-slate-700',
+                        accentBar: 'bg-slate-400 dark:bg-slate-600'
+                    };
+            }
+        }
+
+        function renderPrereqChips(sub) {
+            if (sub.reqs.length === 0 && !sub.specialRule) {
+                return `<span class="text-[11px] text-slate-400 dark:text-slate-500 italic">Sin correlativas previas</span>`;
+            }
+
+            let html = '<div class="flex flex-wrap gap-1 items-center">';
+            sub.reqs.forEach(reqId => {
+                const ok = isRegOrApp(reqId);
+                const reqSub = SUBJECT_MAP[reqId];
+                const title = reqSub ? `(${reqId}) ${reqSub.name}` : reqId;
+                const cls = ok
+                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800'
+                    : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800/70';
+                html += `<span title="${title}" class="px-1.5 py-0.5 text-[10px] font-bold rounded border ${cls}">(${reqId})</span>`;
+            });
+
+            if (sub.specialRule === 'TERM_8_CFE_6' || sub.specialRule === 'TERM_9_CFE_6') {
+                html += `<span class="px-1.5 py-0.5 text-[10px] font-bold rounded border bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800">≥ 6 CFE</span>`;
+            } else if (sub.specialRule === 'TERM_10_FULL') {
+                html += `<span class="px-1.5 py-0.5 text-[10px] font-bold rounded border bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800">CIC + Idioma + 8 CFE</span>`;
+            } else if (sub.specialRule === 'THESIS_656') {
+                html += `<span class="px-1.5 py-0.5 text-[10px] font-bold rounded border bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800">100% Plan Aprobado</span>`;
+            }
+
+            html += '</div>';
+            return html;
+        }
+
+        function renderMainView() {
+            const container = document.getElementById('subjects-container');
+            const filtered = getFilteredSubjects();
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-12 text-center border border-slate-200 dark:border-slate-800">
+                        <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto mb-3 text-2xl">
+                            <i class="fa-solid fa-filter-circle-xmark"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-800 dark:text-slate-200">No se encontraron asignaturas</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Probá limpiando los filtros o buscando con otro nombre o código.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            if (uiState.viewMode === 'table') {
+                renderTableView(container, filtered);
+            } else {
+                renderCardsView(container, filtered);
+            }
+        }
+
+        function renderCardsView(container, subjects) {
+            const sections = [
+                { key: 'INTRO', title: 'Ciclo Introductorio — Nivelación', subtitle: '2 asignaturas iniciales (forman parte de las 16 del Ciclo Inicial Común)' },
+                { key: 'Y1_T1', title: '1° Año • 1° Cuatrimestre (Ciclo Inicial Común)', subtitle: '6 asignaturas' },
+                { key: 'Y1_T2', title: '1° Año • 2° Cuatrimestre (Ciclo Inicial Común)', subtitle: '4 asignaturas' },
+                { key: 'Y2_T3', title: '2° Año • 3° Cuatrimestre (Ciclo Inicial Común)', subtitle: '3 asignaturas' },
+                { key: 'Y2_T4', title: '2° Año • 4° Cuatrimestre (Ciclo Inicial Común)', subtitle: '3 asignaturas obligatorias' },
+                { key: 'Y2_OPT', title: 'Optativas (4° Cuatrimestre)', subtitle: 'Seleccioná y aprobá al menos 1 asignatura optativa' },
+                { key: 'Y3_T5', title: '3° Año • 5° Cuatrimestre (Ciclo de Formación Específica)', subtitle: '4 asignaturas' },
+                { key: 'Y3_T6', title: '3° Año • 6° Cuatrimestre (Ciclo de Formación Específica)', subtitle: '4 asignaturas' },
+                { key: 'Y4_T7', title: '4° Año • 7° Cuatrimestre (Ciclo de Formación Específica)', subtitle: '4 asignaturas' },
+                { key: 'Y4_T8', title: '4° Año • 8° Cuatrimestre (Ciclo de Formación Específica)', subtitle: 'Requiere ≥ 6 materias regularizadas o aprobadas del CFE' },
+                { key: 'Y5_T9', title: '5° Año • 9° Cuatrimestre (Ciclo de Formación Profesional)', subtitle: '4 seminarios/talleres' },
+                { key: 'Y5_T10', title: '5° Año • 10° Cuatrimestre (Ciclo de Formación Profesional)', subtitle: 'Requiere Nivelación + CIC (16) + Idioma (666) aprobados y ≥ 8 CFE reg/aprob' },
+                { key: 'FINAL', title: 'Requisito Transversal y Trabajo Final de Licenciatura', subtitle: 'Idioma (durante toda la carrera) + Trabajo Final de Grado (656)' }
+            ];
+
+            const renderedSections = sections.map(sec => {
+                const items = subjects.filter(s => s.groupKey === sec.key);
+                if (items.length === 0) return '';
+
+                const cardsHtml = items.map(sub => {
+                    const ev = evaluateSubject(sub);
+                    const rec = ev.record;
+                    const cfg = getBadgeStyle(ev.effectiveState);
+
+                    return `
+                        <article
+                            data-subject-id="${sub.id}"
+                            onmouseenter="handleCardHover('${sub.id}')"
+                            onmouseleave="handleCardLeave()"
+                            onclick="openEditModal('${sub.id}')"
+                            class="subject-card card-transition relative rounded-2xl border p-4 cursor-pointer flex flex-col justify-between shadow-sm hover:shadow-md ${cfg.cardClass}"
+                        >
+                            <div class="absolute left-0 top-3 bottom-3 w-1 rounded-r-full ${cfg.accentBar}"></div>
+
+                            <div>
+                                <div class="flex items-center justify-between gap-2 mb-2 pl-1.5">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="px-2 py-0.5 text-xs font-extrabold rounded-lg bg-slate-900/5 dark:bg-white/10 text-slate-700 dark:text-slate-200">
+                                            (${sub.code})
+                                        </span>
+                                        ${sub.isElective ? `<span class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300">Optativa</span>` : ''}
+                                    </div>
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${cfg.badgeClass}">
+                                        <i class="fa-solid ${cfg.icon} text-[10px]"></i>
+                                        ${cfg.label}
+                                    </span>
+                                </div>
+
+                                <h3 class="text-sm font-bold text-slate-900 dark:text-white leading-snug pl-1.5 mb-3">
+                                    ${sub.name}
+                                </h3>
+                            </div>
+
+                            <div class="pl-1.5 pt-2.5 border-t border-slate-200/60 dark:border-slate-800/80 space-y-2">
+                                <div class="flex items-center justify-between gap-2">
+                                    ${renderPrereqChips(sub)}
+                                </div>
+
+                                <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+                                    ${rec.grade ? `<span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-600 text-white">Nota: ${rec.grade}</span>` : ''}
+                                    ${rec.year ? `<span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300"><i class="fa-regular fa-calendar mr-1"></i>${rec.year}</span>` : ''}
+                                    ${rec.taken ? `<span class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-sky-100/80 dark:bg-sky-950 text-sky-700 dark:text-sky-300">Cursada</span>` : ''}
+                                    ${rec.notes ? `<span title="${rec.notes.replace(/"/g, '&quot;')}" class="px-1.5 py-0.5 rounded-md text-[11px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800"><i class="fa-regular fa-comment-dots"></i></span>` : ''}
+                                </div>
+                            </div>
+                        </article>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="space-y-3">
+                        <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 border-b border-slate-200 dark:border-slate-800 pb-2">
+                            <h2 class="font-display text-base sm:text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">${sec.title}</h2>
+                            <span class="text-xs font-medium text-slate-500 dark:text-slate-400">${sec.subtitle}</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+                            ${cardsHtml}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = renderedSections;
+        }
+
+        function renderTableView(container, subjects) {
+            const rowsHtml = subjects.map(sub => {
+                const ev = evaluateSubject(sub);
+                const rec = ev.record;
+                const cfg = getBadgeStyle(ev.effectiveState);
+
+                return `
+                    <tr onclick="openEditModal('${sub.id}')" class="hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition border-b border-slate-100 dark:border-slate-800/80">
+                        <td class="py-3 px-3 text-xs font-extrabold text-slate-700 dark:text-slate-300 whitespace-nowrap">(${sub.code})</td>
+                        <td class="py-3 px-3">
+                            <div class="text-sm font-semibold text-slate-900 dark:text-white">${sub.name}</div>
+                            <div class="text-[11px] text-slate-400">${sub.cycleName} • ${sub.term}</div>
+                        </td>
+                        <td class="py-3 px-3 whitespace-nowrap">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${cfg.badgeClass}">
+                                <i class="fa-solid ${cfg.icon} text-[10px]"></i>
+                                ${cfg.label}
+                            </span>
+                        </td>
+                        <td class="py-3 px-3 text-center whitespace-nowrap">
+                            ${rec.taken ? '<i class="fa-solid fa-check text-sky-600 dark:text-sky-400"></i>' : '<span class="text-slate-300 dark:text-slate-700">-</span>'}
+                        </td>
+                        <td class="py-3 px-3 text-center whitespace-nowrap">
+                            ${rec.grade ? `<span class="px-2 py-0.5 rounded font-bold text-xs bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">${rec.grade}</span>` : '<span class="text-slate-400 text-xs">-</span>'}
+                        </td>
+                        <td class="py-3 px-3 text-center whitespace-nowrap text-xs font-medium text-slate-600 dark:text-slate-300">
+                            ${rec.year || '-'}
+                        </td>
+                        <td class="py-3 px-3">
+                            ${renderPrereqChips(sub)}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    <th class="py-3 px-3">Cód.</th>
+                                    <th class="py-3 px-3">Asignatura / Ciclo</th>
+                                    <th class="py-3 px-3">Estado</th>
+                                    <th class="py-3 px-3 text-center">Cursada</th>
+                                    <th class="py-3 px-3 text-center">Nota</th>
+                                    <th class="py-3 px-3 text-center">Año</th>
+                                    <th class="py-3 px-3">Correlativas / Requisitos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        /**
+         * RESALTADO VISUAL AL PASAR EL CURSOR
+         */
+        function handleCardHover(subjectId) {
+            const sub = SUBJECT_MAP[subjectId];
+            if (!sub) return;
+
+            const prereqs = new Set(sub.reqs);
+            const unlocks = new Set(getDirectDependents(subjectId));
+
+            document.querySelectorAll('.subject-card').forEach(card => {
+                const id = card.getAttribute('data-subject-id');
+                card.classList.remove('highlight-prereq', 'highlight-unlocks', 'highlight-selected');
+                if (id === subjectId) {
+                    card.classList.add('highlight-selected');
+                } else if (prereqs.has(id)) {
+                    card.classList.add('highlight-prereq');
+                } else if (unlocks.has(id)) {
+                    card.classList.add('highlight-unlocks');
+                }
+            });
+        }
+
+        function handleCardLeave() {
+            document.querySelectorAll('.subject-card').forEach(card => {
+                card.classList.remove('highlight-prereq', 'highlight-unlocks', 'highlight-selected');
+            });
+        }
+
+        /**
+         * MODAL DE EDICIÓN
+         */
+        function openEditModal(subjectId) {
+            const sub = SUBJECT_MAP[subjectId];
+            if (!sub) return;
+
+            const ev = evaluateSubject(sub);
+            const rec = ev.record;
+
+            document.getElementById('modal-subject-id').value = sub.id;
+            document.getElementById('modal-subject-code').textContent = `Cód. (${sub.code})`;
+            document.getElementById('modal-subject-meta').textContent = `${sub.cycleName} • ${sub.term}`;
+            document.getElementById('modal-subject-name').textContent = sub.name;
+
+            // Caja informativa de correlativas
+            const prereqBox = document.getElementById('modal-prereq-box');
+            let prereqHtml = '';
+
+            if (sub.reqs.length === 0 && ev.specialReasons.length === 0 && !sub.specialRule) {
+                prereqHtml = `<div class="text-emerald-600 dark:text-emerald-400 font-medium"><i class="fa-solid fa-check-circle mr-1.5"></i>Esta asignatura no tiene correlativas previas obligatorias.</div>`;
+            } else {
+                if (sub.reqs.length > 0) {
+                    const list = sub.reqs.map(id => {
+                        const s = SUBJECT_MAP[id];
+                        const ok = isRegOrApp(id);
+                        return `<span class="${ok ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-amber-600 dark:text-amber-400 font-semibold'}">${ok ? '✓' : '✗'} (${id}) ${s ? s.name : ''}</span>`;
+                    }).join('<br>');
+                    prereqHtml += `<div><strong class="text-slate-700 dark:text-slate-300">Correlativas previas:</strong><div class="pl-2 mt-0.5">${list}</div></div>`;
+                }
+                if (ev.specialReasons.length > 0) {
+                    prereqHtml += `<div class="pt-1 text-amber-700 dark:text-amber-400 font-medium">${ev.specialReasons.join('<br>')}</div>`;
+                } else if (sub.specialRule) {
+                    prereqHtml += `<div class="pt-1 text-emerald-600 dark:text-emerald-400 font-medium"><i class="fa-solid fa-check-circle mr-1"></i>Cumplís con los requisitos especiales de ciclo para esta materia.</div>`;
+                }
+            }
+            prereqBox.innerHTML = prereqHtml;
+
+            document.querySelectorAll('input[name="subject-status"]').forEach(r => {
+                r.checked = (r.value === rec.status);
+            });
+
+            document.getElementById('modal-taken-checkbox').checked = rec.taken || ['CURSANDO', 'REGULAR', 'APROBADA'].includes(rec.status);
+            document.getElementById('modal-grade').value = rec.grade || '';
+            document.getElementById('modal-year').value = rec.year || '';
+            document.getElementById('modal-notes').value = rec.notes || '';
+
+            const modal = document.getElementById('edit-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeEditModal() {
+            const modal = document.getElementById('edit-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        document.querySelectorAll('input[name="subject-status"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const val = e.target.value;
+                const takenCheckbox = document.getElementById('modal-taken-checkbox');
+                const yearInput = document.getElementById('modal-year');
+                if (['CURSANDO', 'REGULAR', 'APROBADA'].includes(val)) {
+                    takenCheckbox.checked = true;
+                    if (!yearInput.value) {
+                        yearInput.value = new Date().getFullYear();
+                    }
+                }
+            });
+        });
+
+        document.getElementById('edit-subject-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById('modal-subject-id').value;
+            const status = document.querySelector('input[name="subject-status"]:checked').value;
+            let taken = document.getElementById('modal-taken-checkbox').checked;
+            const grade = document.getElementById('modal-grade').value.trim();
+            const yearRaw = document.getElementById('modal-year').value;
+            const notes = document.getElementById('modal-notes').value.trim();
+
+            if (['CURSANDO', 'REGULAR', 'APROBADA'].includes(status)) {
+                taken = true;
+            }
+
+            const year = yearRaw !== '' ? parseInt(yearRaw, 10) : null;
+
+            appState.records[id] = {
+                status,
+                taken,
+                grade,
+                year,
+                notes
+            };
+
+            saveState();
+            updateKPIs();
+            renderMainView();
+            closeEditModal();
+            showToast(`Guardado: (${id}) ${SUBJECT_MAP[id].name}`, 'success');
+        });
+
+        /**
+         * EXPORTAR E IMPORTAR CSV (ROUND-TRIP COMPLETO Y COMPATIBLE CON EXCEL)
+         */
+        function exportCSV() {
+            const sep = ';'; // Punto y coma estándar para Excel en español
+            const headers = ['Codigo', 'Ciclo', 'Anio_Plan', 'Cuatrimestre', 'Asignatura', 'Estado', 'Cursada', 'Nota_Final', 'Anio_Cursado', 'Observaciones'];
+
+            const escapeCSV = (val) => {
+                const str = String(val ?? '');
+                if (str.includes(sep) || str.includes('"') || str.includes('\n')) {
+                    return `"${str.replace(/"/g, '""')}"`;
+                }
+                return str;
+            };
+
+            const rows = CURRICULUM_DATA.map(sub => {
+                const ev = evaluateSubject(sub);
+                const rec = ev.record;
+                return [
+                    sub.code,
+                    sub.cycleName,
+                    sub.year,
+                    sub.term,
+                    sub.name,
+                    rec.status, // Guardamos el estado real (PENDIENTE, CURSANDO, REGULAR, APROBADA)
+                    rec.taken ? 'SI' : 'NO',
+                    rec.grade || '',
+                    rec.year || '',
+                    rec.notes || ''
+                ].map(escapeCSV).join(sep);
+            });
+
+            const csvContent = '\uFEFF' + [headers.join(sep), ...rows].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ciencia_politica_unc_${new Date().toISOString().slice(0, 10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Archivo CSV exportado correctamente', 'success');
+        }
+
+        function parseCSVLine(line, sep) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    if (inQuotes && line[i + 1] === '"') {
+                        current += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === sep && !inQuotes) {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current);
+            return result;
+        }
+
+        function importCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    let text = e.target.result.replace(/^\uFEFF/, '');
+                    const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
+                    if (lines.length < 2) {
+                        showToast('El archivo CSV está vacío', 'error');
+                        return;
+                    }
+
+                    // Detectar separador (; o ,)
+                    const sep = lines[0].includes(';') ? ';' : ',';
+                    const headers = parseCSVLine(lines[0], sep).map(h => h.trim().toLowerCase());
+
+                    const idxCode = headers.findIndex(h => h.includes('codigo') || h.includes('código'));
+                    const idxStatus = headers.findIndex(h => h.includes('estado'));
+                    const idxTaken = headers.findIndex(h => h.includes('cursada'));
+                    const idxGrade = headers.findIndex(h => h.includes('nota'));
+                    const idxYear = headers.findIndex(h => h.includes('anio_cursado') || h.includes('año_cursado') || h === 'anio' || h === 'año');
+                    const idxNotes = headers.findIndex(h => h.includes('observaciones') || h.includes('notas'));
+
+                    if (idxCode === -1 || idxStatus === -1) {
+                        showToast('El CSV no tiene las columnas esperadas (Codigo, Estado)', 'error');
+                        return;
+                    }
+
+                    const newRecords = {};
+                    let importedCount = 0;
+
+                    for (let i = 1; i < lines.length; i++) {
+                        const cols = parseCSVLine(lines[i], sep);
+                        const code = (cols[idxCode] || '').trim();
+                        if (!SUBJECT_MAP[code]) continue;
+
+                        const rawStatus = (cols[idxStatus] || 'PENDIENTE').trim().toUpperCase();
+                        let status = 'PENDIENTE';
+                        if (rawStatus.includes('APROB')) status = 'APROBADA';
+                        else if (rawStatus.includes('REGUL')) status = 'REGULAR';
+                        else if (rawStatus.includes('CURSAN')) status = 'CURSANDO';
+
+                        const rawTaken = idxTaken !== -1 ? (cols[idxTaken] || '').trim().toUpperCase() : '';
+                        const taken = rawTaken === 'SI' || rawTaken === 'SÍ' || rawTaken === 'TRUE' || ['CURSANDO', 'REGULAR', 'APROBADA'].includes(status);
+
+                        const grade = idxGrade !== -1 ? (cols[idxGrade] || '').trim() : '';
+                        const yearVal = idxYear !== -1 ? parseInt((cols[idxYear] || '').trim(), 10) : NaN;
+                        const year = !isNaN(yearVal) ? yearVal : null;
+                        const notes = idxNotes !== -1 ? (cols[idxNotes] || '').trim() : '';
+
+                        if (status !== 'PENDIENTE' || taken || grade || year || notes) {
+                            newRecords[code] = { status, taken, grade, year, notes };
+                            importedCount++;
+                        }
+                    }
+
+                    appState.records = newRecords;
+                    saveState();
+                    updateKPIs();
+                    renderMainView();
+                    showToast(`CSV importado: ${importedCount} materias cargadas`, 'success');
+                } catch (err) {
+                    console.error(err);
+                    showToast('Error al procesar el archivo CSV', 'error');
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        /**
+         * EXPORTAR E IMPORTAR JSON
+         */
+        function exportJSON() {
+            const blob = new Blob([JSON.stringify(appState, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `respaldo_ciencia_politica_unc_${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Respaldo JSON descargado', 'success');
+        }
+
+        function importJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed && typeof parsed.records === 'object') {
+                        appState.records = parsed.records;
+                        saveState();
+                        updateKPIs();
+                        renderMainView();
+                        showToast('Respaldo JSON restaurado', 'success');
+                    } else {
+                        showToast('Formato JSON inválido', 'error');
+                    }
+                } catch (err) {
+                    showToast('Error al leer JSON', 'error');
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        /**
+         * CONTROLES DE NAVEGACIÓN, FILTROS Y MODALES
+         */
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            uiState.searchQuery = e.target.value;
+            renderMainView();
+        });
+
+        document.getElementById('status-filter').addEventListener('change', (e) => {
+            uiState.statusFilter = e.target.value;
+            renderMainView();
+        });
+
+        document.getElementById('year-filter').addEventListener('change', (e) => {
+            uiState.yearFilter = e.target.value;
+            renderMainView();
+        });
+
+        document.querySelectorAll('.cycle-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.cycle-tab').forEach(t => {
+                    t.classList.remove('bg-fcs-600', 'text-white', 'shadow-sm');
+                    t.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300');
+                });
+                tab.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300');
+                tab.classList.add('bg-fcs-600', 'text-white', 'shadow-sm');
+
+                uiState.cycleFilter = tab.getAttribute('data-filter');
+                renderMainView();
+            });
+        });
+
+        function setViewMode(mode) {
+            uiState.viewMode = mode;
+            const cardsBtn = document.getElementById('view-cards-btn');
+            const tableBtn = document.getElementById('view-table-btn');
+
+            if (mode === 'cards') {
+                cardsBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-700 text-fcs-600 dark:text-fcs-300 shadow-sm transition flex items-center gap-1.5';
+                tableBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-1.5';
+            } else {
+                tableBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-700 text-fcs-600 dark:text-fcs-300 shadow-sm transition flex items-center gap-1.5';
+                cardsBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-1.5';
+            }
+            renderMainView();
+        }
+
+        function openResetModal() {
+            const modal = document.getElementById('reset-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeResetModal() {
+            const modal = document.getElementById('reset-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function confirmReset() {
+            appState.records = {};
+            saveState();
+            updateKPIs();
+            renderMainView();
+            closeResetModal();
+            showToast('Se reinició todo el historial académico', 'info');
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const colors = {
+                success: 'bg-emerald-600 text-white',
+                error: 'bg-rose-600 text-white',
+                info: 'bg-slate-800 dark:bg-slate-700 text-white'
+            };
+            toast.className = `${colors[type] || colors.info} px-4 py-2.5 rounded-xl shadow-lg text-xs sm:text-sm font-medium flex items-center gap-2 transform transition-all duration-300 translate-y-2 opacity-0`;
+            toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-circle-xmark' : 'fa-circle-info'}"></i><span>${message}</span>`;
+            container.appendChild(toast);
+
+            requestAnimationFrame(() => toast.classList.remove('translate-y-2', 'opacity-0'));
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 2800);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeEditModal();
+                closeResetModal();
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            updateKPIs();
+            renderMainView();
+        });
+    </script>
+</body>
+</html>
