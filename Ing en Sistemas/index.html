@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seguimiento Académico - ISI Plan 2023 (UTN FRC)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        utn: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Personalización de barras de desplazamiento y utilidades visuales */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.5);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(107, 114, 128, 0.8);
+        }
+        .card-transition {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .highlight-prereq {
+            box-shadow: 0 0 0 3px #f59e0b !important;
+            transform: translateY(-2px);
+        }
+        .highlight-unlocks {
+            box-shadow: 0 0 0 3px #8b5cf6 !important;
+            transform: translateY(-2px);
+        }
+        .highlight-selected {
+            box-shadow: 0 0 0 3px #0ea5e9 !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased selection:bg-sky-500 selection:text-white min-h-screen flex flex-col">
+
+    <!-- Notificación Toast Flotante (Reemplazo seguro de alert) -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Barra de Navegación Superior -->
+    <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-wrap items-center justify-between py-3 gap-3">
+                <!-- Logo y Título -->
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-600 to-indigo-700 flex items-center justify-center text-white font-bold shadow-md">
+                        <i class="fa-solid fa-laptop-code text-lg"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-white">Ingeniería en Sistemas</h1>
+                            <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-sky-100 text-sky-800 dark:bg-sky-900/60 dark:text-sky-300 border border-sky-200 dark:border-sky-800">Plan 2023</span>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">UTN - Facultad Regional Córdoba • Régimen de Correlativas</p>
+                    </div>
+                </div>
+
+                <!-- Acciones Globales -->
+                <div class="flex items-center gap-2 flex-wrap">
+                    <!-- Toggle PPS -->
+                    <label class="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer transition text-xs sm:text-sm font-medium border border-slate-200 dark:border-slate-700 select-none" title="Práctica Profesional Supervisada: Requisito para inscribirse a Proyecto Final">
+                        <input type="checkbox" id="pps-checkbox" class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300">
+                        <span>PPS Acreditada</span>
+                    </label>
+
+                    <!-- Botón Exportar JSON -->
+                    <button onclick="exportJSON()" class="p-2.5 sm:px-3 sm:py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-medium transition flex items-center gap-1.5 border border-slate-200 dark:border-slate-700" title="Descargar respaldo JSON">
+                        <i class="fa-solid fa-download text-sky-600 dark:text-sky-400"></i>
+                        <span class="hidden md:inline">Respaldo</span>
+                    </button>
+
+                    <!-- Botón Exportar CSV -->
+                    <button onclick="exportCSV()" class="p-2.5 sm:px-3 sm:py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-medium transition flex items-center gap-1.5 border border-slate-200 dark:border-slate-700" title="Exportar planilla CSV para Excel">
+                        <i class="fa-solid fa-file-csv text-emerald-600 dark:text-emerald-400"></i>
+                        <span class="hidden md:inline">CSV</span>
+                    </button>
+
+                    <!-- Botón Importar JSON -->
+                    <label class="p-2.5 sm:px-3 sm:py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-medium transition flex items-center gap-1.5 cursor-pointer border border-slate-200 dark:border-slate-700" title="Cargar archivo JSON guardado">
+                        <i class="fa-solid fa-upload text-indigo-600 dark:text-indigo-400"></i>
+                        <span class="hidden md:inline">Importar</span>
+                        <input type="file" id="import-file" accept=".json" class="hidden" onchange="importJSON(event)">
+                    </label>
+
+                    <!-- Botón Reiniciar -->
+                    <button onclick="openResetModal()" class="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 transition border border-rose-200 dark:border-rose-800/60" title="Reiniciar todos los datos">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+
+                    <!-- Modo Oscuro / Claro -->
+                    <button onclick="toggleDarkMode()" id="theme-toggle" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-amber-400 transition border border-slate-200 dark:border-slate-700" title="Cambiar tema">
+                        <i class="fa-solid fa-moon dark:hidden"></i>
+                        <i class="fa-solid fa-sun hidden dark:inline"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenedor Principal -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Panel de KPIs / Estadísticas en Tiempo Real -->
+        <section aria-label="Resumen de Progreso Académico" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- KPI 1: Avance Ingeniería -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Avance Ingeniería (Grado)</p>
+                        <div class="flex items-baseline gap-2 mt-1">
+                            <span id="kpi-eng-percent" class="text-3xl font-extrabold text-slate-900 dark:text-white">0%</span>
+                            <span id="kpi-eng-detail" class="text-xs font-medium text-slate-500 dark:text-slate-400">0/37 oblig. + 0/20 créd.</span>
+                        </div>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                        <i class="fa-solid fa-graduation-cap text-lg"></i>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                        <div id="kpi-eng-bar" class="bg-gradient-to-r from-emerald-500 to-teal-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI 2: Título Intermedio Analista -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Título Analista Universitario</p>
+                        <div class="flex items-baseline gap-2 mt-1">
+                            <span id="kpi-analyst-percent" class="text-3xl font-extrabold text-slate-900 dark:text-white">0%</span>
+                            <span id="kpi-analyst-detail" class="text-xs font-medium text-slate-500 dark:text-slate-400">0/24 mat. + 0/4 créd. N3</span>
+                        </div>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 flex items-center justify-center">
+                        <i class="fa-solid fa-award text-lg"></i>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                        <div id="kpi-analyst-bar" class="bg-gradient-to-r from-sky-500 to-indigo-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI 3: Promedio General -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Promedio General</p>
+                        <div class="flex items-baseline gap-2 mt-1">
+                            <span id="kpi-avg" class="text-3xl font-extrabold text-slate-900 dark:text-white">-</span>
+                            <span id="kpi-avg-count" class="text-xs font-medium text-slate-500 dark:text-slate-400">Sin notas cargadas</span>
+                        </div>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                        <i class="fa-solid fa-star text-lg"></i>
+                    </div>
+                </div>
+                <div class="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                    <span class="text-slate-500 dark:text-slate-400">Créditos Electivas:</span>
+                    <span id="kpi-credits-badge" class="font-bold text-indigo-600 dark:text-indigo-400">0 / 20 pts (N3: 0/4)</span>
+                </div>
+            </div>
+
+            <!-- KPI 4: Resumen de Estados -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Estado de Asignaturas</p>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="flex items-center justify-between p-2 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/50">
+                        <span class="text-emerald-800 dark:text-emerald-300 font-medium">Aprobadas</span>
+                        <span id="stat-approved" class="font-bold text-emerald-700 dark:text-emerald-400 text-sm">0</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2 rounded-xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/50">
+                        <span class="text-amber-800 dark:text-amber-300 font-medium">Regulares</span>
+                        <span id="stat-regular" class="font-bold text-amber-700 dark:text-amber-400 text-sm">0</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/50">
+                        <span class="text-blue-800 dark:text-blue-300 font-medium">Cursando</span>
+                        <span id="stat-taking" class="font-bold text-blue-700 dark:text-blue-400 text-sm">0</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2 rounded-xl bg-violet-50/70 dark:bg-violet-950/40 border border-violet-100 dark:border-violet-900/50">
+                        <span class="text-violet-800 dark:text-violet-300 font-medium">Habilitadas</span>
+                        <span id="stat-unlocked" class="font-bold text-violet-700 dark:text-violet-400 text-sm">0</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Barra de Filtros, Búsqueda y Selector de Vista -->
+        <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+            <div class="flex flex-col lg:flex-row gap-3 justify-between items-stretch lg:items-center">
+                <!-- Buscador -->
+                <div class="relative flex-1 max-w-md">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input type="text" id="search-input" placeholder="Buscar por nombre o N° de materia (ej: 16, Análisis, Base de Datos)..." class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 transition">
+                </div>
+
+                <!-- Filtros Secundarios y Vista -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <!-- Filtro por Estado -->
+                    <select id="status-filter" class="px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        <option value="ALL">Estado: Todos</option>
+                        <option value="APROBADA">✅ Aprobadas</option>
+                        <option value="REGULAR">🟡 Regulares (Debe final)</option>
+                        <option value="CURSANDO">🔵 Cursando actualmente</option>
+                        <option value="HABILITADA">🟣 Habilitadas para cursar</option>
+                        <option value="BLOQUEADA">🔒 Bloqueadas por correlativas</option>
+                        <option value="CURSADA_LIBRE">📝 Cursadas (Quedó libre / Sin aprobar)</option>
+                    </select>
+
+                    <!-- Filtro por Año -->
+                    <select id="year-filter" class="px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        <option value="ALL">Año cursado/aprobado: Todos</option>
+                    </select>
+
+                    <!-- Selector de Vista (Tarjetas / Tabla) -->
+                    <div class="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-1 border border-slate-200 dark:border-slate-700">
+                        <button id="view-cards-btn" onclick="setViewMode('cards')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-400 shadow-sm transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-grip"></i> Malla
+                        </button>
+                        <button id="view-table-btn" onclick="setViewMode('table')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-table-list"></i> Tabla
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestañas de Nivel / Año de la Carrera -->
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1" id="level-tabs">
+                <button data-level="ALL" class="level-tab active px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-sky-600 text-white shadow-sm transition whitespace-nowrap">Todos los Niveles</button>
+                <button data-level="1" class="level-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">1° Nivel</button>
+                <button data-level="2" class="level-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">2° Nivel</button>
+                <button data-level="3" class="level-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">3° Nivel (Analista)</button>
+                <button data-level="4" class="level-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">4° Nivel</button>
+                <button data-level="5" class="level-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap">5° Nivel</button>
+                <button data-level="ELECTIVAS" class="level-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition whitespace-nowrap flex items-center gap-1.5">
+                    <i class="fa-solid fa-puzzle-piece text-indigo-500"></i> Electivas Plan 2023
+                </button>
+            </div>
+
+            <!-- Leyenda interactiva -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
+                <div class="flex flex-wrap items-center gap-3">
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Aprobada</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Regular</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Cursando</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-violet-500"></span> Habilitada</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span> Bloqueada</span>
+                </div>
+                <div class="hidden sm:flex items-center gap-2 text-slate-400">
+                    <i class="fa-solid fa-circle-info text-sky-500"></i>
+                    <span>Pasá el cursor sobre una materia para resaltar sus <strong class="text-amber-500">correlativas</strong> y las que <strong class="text-violet-500">destraba</strong>. Hacé clic para editar.</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contenedor Dinámico de Materias (Tarjetas o Tabla) -->
+        <section id="subjects-container" class="space-y-8 pb-12">
+            <!-- Renderizado dinámicamente por JS -->
+        </section>
+
+    </main>
+
+    <!-- Modal de Edición de Materia -->
+    <div id="edit-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm transition-opacity">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden transform transition-all">
+            <!-- Cabecera del Modal -->
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span id="modal-subject-code" class="px-2 py-0.5 text-xs font-bold rounded-md bg-sky-100 text-sky-800 dark:bg-sky-900 dark:text-sky-200">#1</span>
+                        <span id="modal-subject-meta" class="text-xs font-medium text-slate-500 dark:text-slate-400">1° Nivel • Anual • 5 hs</span>
+                    </div>
+                    <h2 id="modal-subject-name" class="text-lg font-bold text-slate-900 dark:text-white mt-1 leading-snug">Análisis Matemático I</h2>
+                </div>
+                <button onclick="closeEditModal()" class="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Cuerpo del Modal -->
+            <form id="edit-subject-form" class="p-6 space-y-5">
+                <input type="hidden" id="modal-subject-id">
+
+                <!-- Alerta de Correlativas en el Modal -->
+                <div id="modal-prereq-box" class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs space-y-2">
+                    <!-- Se llena dinámicamente -->
+                </div>
+
+                <!-- Estado Académico -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Estado Académico</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="subject-status" value="PENDIENTE" class="peer sr-only">
+                            <div class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-center text-xs font-semibold peer-checked:bg-slate-800 peer-checked:text-white dark:peer-checked:bg-slate-200 dark:peer-checked:text-slate-900 peer-checked:border-transparent transition">
+                                <i class="fa-regular fa-circle block text-base mb-1"></i>
+                                Pendiente
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="subject-status" value="CURSANDO" class="peer sr-only">
+                            <div class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-center text-xs font-semibold peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-transparent transition">
+                                <i class="fa-solid fa-book-open block text-base mb-1"></i>
+                                Cursando
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="subject-status" value="REGULAR" class="peer sr-only">
+                            <div class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-center text-xs font-semibold peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-transparent transition">
+                                <i class="fa-solid fa-clock block text-base mb-1"></i>
+                                Regular
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="subject-status" value="APROBADA" class="peer sr-only">
+                            <div class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-center text-xs font-semibold peer-checked:bg-emerald-600 peer-checked:text-white peer-checked:border-transparent transition">
+                                <i class="fa-solid fa-circle-check block text-base mb-1"></i>
+                                Aprobada
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Checkbox: ¿La cursé? (Útil si quedó libre o recursa) -->
+                <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                    <div>
+                        <span class="text-sm font-semibold text-slate-800 dark:text-slate-200 block">¿Ya la cursaste alguna vez?</span>
+                        <span class="text-xs text-slate-500 dark:text-slate-400">Se marca automáticamente si estás cursando, regular o aprobada.</span>
+                    </div>
+                    <input type="checkbox" id="modal-taken-checkbox" class="w-5 h-5 rounded text-sky-600 focus:ring-sky-500 border-slate-300 cursor-pointer">
+                </div>
+
+                <!-- Nota Final y Año -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="modal-grade" class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Nota Final (1 a 10)</label>
+                        <input type="number" id="modal-grade" min="1" max="10" step="0.5" placeholder="Ej: 8" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:opacity-50">
+                        <p id="modal-grade-hint" class="text-[11px] text-slate-400 mt-1">Disponible al marcar como Aprobada (o nota de cursado).</p>
+                    </div>
+                    <div>
+                        <label for="modal-year" class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Año en que la hiciste</label>
+                        <input type="number" id="modal-year" min="2015" max="2035" placeholder="Ej: 2025" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        <p class="text-[11px] text-slate-400 mt-1">Año de cursado o aprobación.</p>
+                    </div>
+                </div>
+
+                <!-- Observaciones -->
+                <div>
+                    <label for="modal-notes" class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Observaciones / Cátedra / Turno</label>
+                    <textarea id="modal-notes" rows="2" placeholder="Ej: Curso 1K3, promocionada, falta rendir final en turno diciembre..." class="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" onclick="closeEditModal()" class="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Cancelar</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-sky-600 hover:bg-sky-700 text-white shadow-md shadow-sky-500/20 transition flex items-center gap-2">
+                        <i class="fa-solid fa-check"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación de Reinicio -->
+    <div id="reset-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
+            <div class="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white">¿Reiniciar todo tu progreso?</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Se borrarán todas tus materias aprobadas, regulares, notas y años registrados. Te recomendamos descargar un respaldo JSON antes de continuar.</p>
+            <div class="flex items-center justify-end gap-2 pt-2">
+                <button onclick="closeResetModal()" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Cancelar</button>
+                <button onclick="confirmReset()" class="px-4 py-2 rounded-xl text-sm font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition">Sí, borrar todo</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * BASE DE DATOS OFICIAL: PLAN 2023 - INGENIERÍA EN SISTEMAS DE INFORMACIÓN (UTN FRC)
+         * Basada exactamente en el Régimen de Correlativas AETI adjunto.
+         */
+        const CURRICULUM_DATA = [
+            // ================= NIVEL 1 =================
+            { id: '1', code: '1', level: 1, isElective: false, name: 'Análisis Matemático I', modality: 'A', hours: 5, reqRegular: [], reqApproved: [] },
+            { id: '2', code: '2', level: 1, isElective: false, name: 'Álgebra y Geometría Analítica', modality: 'A', hours: 5, reqRegular: [], reqApproved: [] },
+            { id: '3', code: '3', level: 1, isElective: false, name: 'Física I', modality: 'A', hours: 5, reqRegular: [], reqApproved: [] },
+            { id: '4', code: '4', level: 1, isElective: false, name: 'Inglés I', modality: 'A', hours: 2, reqRegular: [], reqApproved: [] },
+            { id: '5', code: '5', level: 1, isElective: false, name: 'Lógica y Estructuras Discretas', modality: '1C-2C', hours: 3, reqRegular: [], reqApproved: [] },
+            { id: '6', code: '6', level: 1, isElective: false, name: 'Algoritmo y Estructura de Datos', modality: 'A', hours: 5, reqRegular: [], reqApproved: [] },
+            { id: '7', code: '7', level: 1, isElective: false, name: 'Arquitectura de Computadoras', modality: '2C-1C', hours: 4, reqRegular: [], reqApproved: [] },
+            { id: '8', code: '8', level: 1, isElective: false, name: 'Sistemas y Proceso de Negocios', modality: '1C-2C', hours: 3, reqRegular: [], reqApproved: [] },
+            { id: '11', code: '11', level: 1, isElective: false, name: 'Ingeniería y Sociedad', modality: '2C-1C', hours: 2, reqRegular: [], reqApproved: [] },
+
+            // ================= NIVEL 2 =================
+            { id: '9', code: '9', level: 2, isElective: false, name: 'Análisis Matemático II', modality: 'A', hours: 5, reqRegular: ['1', '2'], reqApproved: [] },
+            { id: '10', code: '10', level: 2, isElective: false, name: 'Física II', modality: 'A', hours: 5, reqRegular: ['1', '3'], reqApproved: [] },
+            { id: '12', code: '12', level: 2, isElective: false, name: 'Inglés II', modality: 'A', hours: 2, reqRegular: ['4'], reqApproved: [] },
+            { id: '13', code: '13', level: 2, isElective: false, name: 'Sintaxis y Semántica de los Lenguajes', modality: '1C-2C', hours: 4, reqRegular: ['5', '6'], reqApproved: [] },
+            { id: '14', code: '14', level: 2, isElective: false, name: 'Paradigmas de Programación', modality: '1C-2C', hours: 4, reqRegular: ['5', '6'], reqApproved: [] },
+            { id: '15', code: '15', level: 2, isElective: false, name: 'Sistemas Operativos', modality: 'A', hours: 4, reqRegular: ['7'], reqApproved: [] },
+            { id: '16', code: '16', level: 2, isElective: false, name: 'Análisis de Sistemas de Información (Int)', modality: 'A', hours: 6, reqRegular: ['6', '8'], reqApproved: [] },
+            { id: '17', code: '17', level: 2, isElective: false, name: 'Probabilidad y Estadística', modality: '1C-2C', hours: 3, reqRegular: ['1', '2'], reqApproved: [] },
+
+            // ================= NIVEL 3 =================
+            { id: '18', code: '18', level: 3, isElective: false, name: 'Economía', modality: '2C-1C', hours: 3, reqRegular: [], reqApproved: ['1', '2'] },
+            { id: '19', code: '19', level: 3, isElective: false, name: 'Base de Datos', modality: '1C-2C', hours: 4, reqRegular: ['13', '16'], reqApproved: ['5', '6'] },
+            { id: '20', code: '20', level: 3, isElective: false, name: 'Desarrollo de Software', modality: '1C-2C', hours: 4, reqRegular: ['14', '16'], reqApproved: ['5', '6'] },
+            { id: '21', code: '21', level: 3, isElective: false, name: 'Comunicación de Datos', modality: 'A', hours: 4, reqRegular: [], reqApproved: ['3', '7'] },
+            { id: '22', code: '22', level: 3, isElective: false, name: 'Análisis Numérico', modality: '2C-1C', hours: 3, reqRegular: ['9'], reqApproved: ['1', '2'] },
+            { id: '23', code: '23', level: 3, isElective: false, name: 'Diseño de Sistemas de Información (Int)', modality: 'A', hours: 6, reqRegular: ['14', '16'], reqApproved: ['4', '6', '8'] },
+            { id: '99', code: '99', level: 3, isElective: false, name: 'Seminario Integrador (Analista)', modality: '2C', hours: 4, reqRegular: ['16'], reqApproved: ['6', '8', '13', '14'], specialRule: 'ANALYST_SEMINAR' },
+
+            // ================= NIVEL 4 =================
+            { id: '24', code: '24', level: 4, isElective: false, name: 'Legislación', modality: '2C-1C', hours: 2, reqRegular: ['11'], reqApproved: [] },
+            { id: '25', code: '25', level: 4, isElective: false, name: 'Ingeniería y Calidad de Software', modality: '2C-1C', hours: 3, reqRegular: ['19', '20', '23'], reqApproved: ['13', '14'] },
+            { id: '26', code: '26', level: 4, isElective: false, name: 'Redes de Datos', modality: 'A', hours: 4, reqRegular: ['15', '21'], reqApproved: [] },
+            { id: '27', code: '27', level: 4, isElective: false, name: 'Investigación Operativa', modality: 'A', hours: 4, reqRegular: ['17', '22'], reqApproved: [] },
+            { id: '28', code: '28', level: 4, isElective: false, name: 'Simulación', modality: '1C-2C', hours: 3, reqRegular: ['17'], reqApproved: ['9'] },
+            { id: '29', code: '29', level: 4, isElective: false, name: 'Tecnologías Para la Automatización', modality: '2C-1C', hours: 3, reqRegular: ['10', '22'], reqApproved: ['9'] },
+            { id: '30', code: '30', level: 4, isElective: false, name: 'Administración de Sistemas de Información (Int)', modality: 'A', hours: 6, reqRegular: ['18', '23'], reqApproved: ['16'] },
+
+            // ================= NIVEL 5 =================
+            { id: '31', code: '31', level: 5, isElective: false, name: 'Inteligencia Artificial', modality: '2C-1C', hours: 3, reqRegular: ['28'], reqApproved: ['17', '22'] },
+            { id: '32', code: '32', level: 5, isElective: false, name: 'Ciencia de Datos', modality: '2C-1C', hours: 3, reqRegular: ['28'], reqApproved: ['17', '19'] },
+            { id: '33', code: '33', level: 5, isElective: false, name: 'Sistemas de Gestión', modality: '1C-2C', hours: 4, reqRegular: ['18', '27'], reqApproved: ['23'] },
+            { id: '34', code: '34', level: 5, isElective: false, name: 'Gestión Gerencial', modality: '1C-2C', hours: 3, reqRegular: ['24', '30'], reqApproved: ['18'] },
+            { id: '35', code: '35', level: 5, isElective: false, name: 'Seguridad en los Sistemas de Información', modality: '1C-2C', hours: 3, reqRegular: ['26', '30'], reqApproved: ['20', '21'] },
+            { id: '36', code: '36', level: 5, isElective: false, name: 'Proyecto Final (Int)', modality: 'A', hours: 6, reqRegular: ['25', '26', '30'], reqApproved: ['12', '20', '23'], specialRule: 'FINAL_PROJECT' },
+
+            // ================= ELECTIVAS VIGENTES PLAN 2023 =================
+            // Nivel 3
+            { id: 'E1', code: 'EL-3', level: 3, isElective: true, name: 'Backend de Aplicaciones', modality: '2C', credits: 4, reqRegular: ['14', '13'], reqApproved: ['6'] },
+            // Nivel 4
+            { id: 'E2', code: 'EL-4', level: 4, isElective: true, name: 'Green Software', modality: '1C-2C', credits: 3, reqRegular: ['30'], reqApproved: ['20'] },
+            { id: 'E3', code: 'EL-4', level: 4, isElective: true, name: 'Gestión Industrial de la Producción', modality: '1C', credits: 3, reqRegular: ['19'], reqApproved: ['8', '16'] },
+            { id: 'E4', code: 'EL-4', level: 4, isElective: true, name: 'Gestión de la Mejora de los Procesos', modality: '1C-2C', credits: 3, reqRegular: ['19'], reqApproved: ['8', '16'] },
+            { id: 'E5', code: 'EL-4', level: 4, isElective: true, name: 'Desarrollo y Operaciones devOPS', modality: '2C', credits: 3, reqRegular: ['19', '20', '23'], reqApproved: ['13', '14'] },
+            { id: 'E6', code: 'EL-4', level: 4, isElective: true, name: 'Desarrollo de Aplicaciones Con Objetos', modality: '2C', credits: 2, reqRegular: ['13'], reqApproved: ['6'] },
+            { id: 'E7', code: 'EL-4', level: 4, isElective: true, name: 'Comunicación Multimedial en el desarrollo de Sistemas de Información', modality: '2C', credits: 3, reqRegular: ['19'], reqApproved: ['8', '16'] },
+            { id: 'E8', code: 'EL-4', level: 4, isElective: true, name: 'Seguridad en el Desarrollo de Software', modality: '1C', credits: 3, reqRegular: ['19', '20', '23'], reqApproved: ['8', '15'] },
+            // Nivel 5
+            { id: 'E9', code: 'EL-5', level: 5, isElective: true, name: 'Experiencia e Interfaces de Usuario', modality: '1C', credits: 3, reqRegular: ['23'], reqApproved: [] },
+            { id: 'E10', code: 'EL-5', level: 5, isElective: true, name: 'Desarrollo de Tecnología Blockchain', modality: '2C', credits: 3, reqRegular: ['19', '26'], reqApproved: ['14', '20'] },
+            { id: 'E11', code: 'EL-5', level: 5, isElective: true, name: 'Gerenciamiento Estratégico', modality: '1C', credits: 3, reqRegular: ['30'], reqApproved: ['20'] },
+            { id: 'E12', code: 'EL-5', level: 5, isElective: true, name: 'Creatividad y Desarrollos en entornos virtuales', modality: '2C', credits: 3, reqRegular: ['23'], reqApproved: ['20'] },
+            { id: 'E13', code: 'EL-5', level: 5, isElective: true, name: 'Consultoría en Negocios Digitales', modality: '2C', credits: 3, reqRegular: ['30'], reqApproved: ['20'] },
+            { id: 'E14', code: 'EL-5', level: 5, isElective: true, name: 'Emprendimientos Tecnológicos', modality: '1C-2C', credits: 3, reqRegular: ['30'], reqApproved: ['16', '19'] },
+            { id: 'E15', code: 'EL-5', level: 5, isElective: true, name: 'Habilidades Blandas', modality: '2C', credits: 3, reqRegular: ['30'], reqApproved: [] },
+            { id: 'E16', code: 'EL-5', level: 5, isElective: true, name: 'Decisiones en Escenarios Complejos', modality: '1C-2C', credits: 3, reqRegular: ['27'], reqApproved: [] },
+            { id: 'E17', code: 'EL-5', level: 5, isElective: true, name: 'Testing de Software', modality: '2C', credits: 3, reqRegular: ['25'], reqApproved: ['19', '20'] },
+            { id: 'E18', code: 'EL-5', level: 5, isElective: true, name: 'Integración de Aplicaciones en Entorno Web', modality: '2C', credits: 3, reqRegular: ['26'], reqApproved: ['19', '20'] },
+            { id: 'E19', code: 'EL-5', level: 5, isElective: true, name: 'Ingeniería de Software de Fuentes Abiertas/Libres', modality: '1C', credits: 3, reqRegular: ['19', '20', '26'], reqApproved: ['13', '14'] }
+        ];
+
+        // Mapa rápido para acceder a materias por ID
+        const SUBJECT_MAP = {};
+        CURRICULUM_DATA.forEach(s => SUBJECT_MAP[s.id] = s);
+
+        // Estado de la Aplicación
+        const STORAGE_KEY = 'utn_frc_isi_plan2023_v1';
+        let appState = {
+            records: {}, // { [subjectId]: { status: 'PENDIENTE'|'CURSANDO'|'REGULAR'|'APROBADA', taken: boolean, grade: number|null, year: number|null, notes: string } }
+            ppsCompleted: false,
+            darkMode: false
+        };
+
+        // Filtros y vista actuales
+        let uiState = {
+            levelFilter: 'ALL',
+            statusFilter: 'ALL',
+            yearFilter: 'ALL',
+            searchQuery: '',
+            viewMode: 'cards', // 'cards' | 'table'
+            hoveredSubjectId: null
+        };
+
+        /**
+         * INICIALIZACIÓN Y PERSISTENCIA
+         */
+        function loadState() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    appState.records = parsed.records || {};
+                    appState.ppsCompleted = !!parsed.ppsCompleted;
+                    appState.darkMode = !!parsed.darkMode;
+                } else {
+                    // Detectar preferencia del sistema si es primera vez
+                    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                        appState.darkMode = true;
+                    }
+                }
+            } catch (e) {
+                console.error('Error cargando estado:', e);
+            }
+            applyTheme();
+            document.getElementById('pps-checkbox').checked = appState.ppsCompleted;
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+            } catch (e) {
+                console.error('Error guardando estado:', e);
+                showToast('Error al guardar en el navegador', 'error');
+            }
+        }
+
+        function applyTheme() {
+            const html = document.documentElement;
+            if (appState.darkMode) {
+                html.classList.add('dark');
+            } else {
+                html.classList.remove('dark');
+            }
+        }
+
+        function toggleDarkMode() {
+            appState.darkMode = !appState.darkMode;
+            applyTheme();
+            saveState();
+        }
+
+        /**
+         * LÓGICA INTELIGENTE DE CORRELATIVAS
+         */
+        function getRecord(subjectId) {
+            return appState.records[subjectId] || {
+                status: 'PENDIENTE',
+                taken: false,
+                grade: null,
+                year: null,
+                notes: ''
+            };
+        }
+
+        function isRegularOrApproved(subjectId) {
+            const rec = getRecord(subjectId);
+            return rec.status === 'REGULAR' || rec.status === 'APROBADA';
+        }
+
+        function isApproved(subjectId) {
+            return getRecord(subjectId).status === 'APROBADA';
+        }
+
+        /**
+         * Evalúa las correlativas de una asignatura en tiempo real
+         */
+        function evaluateSubjectStatus(subject) {
+            const rec = getRecord(subject.id);
+
+            // Verificar correlativas regulares requeridas para cursar/regularizar
+            const missingRegularForTake = subject.reqRegular.filter(id => !isRegularOrApproved(id));
+            // Verificar correlativas aprobadas requeridas para cursar/regularizar
+            const missingApprovedForTake = subject.reqApproved.filter(id => !isApproved(id));
+
+            // Reglas especiales para cursar/rendir
+            let specialWarnings = [];
+            let allPrev1to23Approved = true;
+            if (subject.specialRule === 'ANALYST_SEMINAR') {
+                // Seminario Integrador (99): para rendir/acceder al título Analista requiere todas previas (1 a 23) aprobadas
+                const prevIds = CURRICULUM_DATA.filter(s => !s.isElective && parseInt(s.id) >= 1 && parseInt(s.id) <= 23).map(s => s.id);
+                const unapprovedPrev = prevIds.filter(id => !isApproved(id));
+                if (unapprovedPrev.length > 0) {
+                    allPrev1to23Approved = false;
+                    specialWarnings.push(`Para rendir y obtener título Analista faltan aprobar ${unapprovedPrev.length} materias previas (1 a 23).`);
+                }
+            }
+
+            let allPrevMandatoryApproved = true;
+            if (subject.specialRule === 'FINAL_PROJECT') {
+                // Proyecto Final (36): requiere todas las previas del plan aprobadas para rendir y PPS para inscribirse
+                const prevMandatory = CURRICULUM_DATA.filter(s => !s.isElective && s.id !== '36' && s.id !== '99').map(s => s.id);
+                const unapprovedAll = prevMandatory.filter(id => !isApproved(id));
+                if (unapprovedAll.length > 0) {
+                    allPrevMandatoryApproved = false;
+                    specialWarnings.push(`Para rendir Proyecto Final requiere aprobar todas las previas (${unapprovedAll.length} pendientes).`);
+                }
+                if (!appState.ppsCompleted) {
+                    specialWarnings.push('Requiere Práctica Profesional Supervisada (PPS) acreditada.');
+                }
+            }
+
+            const canTake = missingRegularForTake.length === 0 && missingApprovedForTake.length === 0;
+            const canPassFinal = canTake && allPrev1to23Approved && allPrevMandatoryApproved && (subject.specialRule !== 'FINAL_PROJECT' || appState.ppsCompleted);
+
+            // Determinar estado efectivo visual
+            let effectiveState = rec.status;
+            if (rec.status === 'PENDIENTE') {
+                effectiveState = canTake ? 'HABILITADA' : 'BLOQUEADA';
+            }
+
+            return {
+                record: rec,
+                effectiveState,
+                canTake,
+                canPassFinal,
+                missingRegularForTake,
+                missingApprovedForTake,
+                specialWarnings
+            };
+        }
+
+        /**
+         * Obtiene todas las materias que dependen directa o indirectamente de una materia dada
+         */
+        function getDirectDependents(subjectId) {
+            return CURRICULUM_DATA.filter(s =>
+                s.reqRegular.includes(subjectId) || s.reqApproved.includes(subjectId)
+            ).map(s => s.id);
+        }
+
+        /**
+         * CÁLCULO DE MÉTRICAS Y KPIs EN TIEMPO REAL
+         */
+        function updateKPIs() {
+            const mandatorySubjects = CURRICULUM_DATA.filter(s => !s.isElective); // 37 asignaturas (1..36 + 99)
+            const electives = CURRICULUM_DATA.filter(s => s.isElective);
+
+            let approvedMandatory = 0;
+            let regularCount = 0;
+            let takingCount = 0;
+            let unlockedCount = 0;
+            let totalApprovedCount = 0;
+
+            let gradesSum = 0;
+            let gradesCount = 0;
+
+            // Conteo por estado global
+            CURRICULUM_DATA.forEach(sub => {
+                const evalData = evaluateSubjectStatus(sub);
+                const st = evalData.effectiveState;
+
+                if (st === 'APROBADA') {
+                    totalApprovedCount++;
+                    if (!sub.isElective) approvedMandatory++;
+                    if (evalData.record.grade && !isNaN(evalData.record.grade)) {
+                        gradesSum += Number(evalData.record.grade);
+                        gradesCount++;
+                    }
+                } else if (st === 'REGULAR') {
+                    regularCount++;
+                } else if (st === 'CURSANDO') {
+                    takingCount++;
+                } else if (st === 'HABILITADA') {
+                    unlockedCount++;
+                }
+            });
+
+            // Créditos electivos
+            let totalElectiveCredits = 0;
+            let level3ElectiveCredits = 0;
+            electives.forEach(el => {
+                if (isApproved(el.id)) {
+                    totalElectiveCredits += el.credits;
+                    if (el.level === 3) level3ElectiveCredits += el.credits;
+                }
+            });
+
+            // Cálculo Porcentaje Ingeniería (Grado): 37 obligatorias + 20 créditos electivos (ponderado: cada crédito equivale a 1 unidad, total 57 unidades)
+            const cappedCreditsEng = Math.min(totalElectiveCredits, 20);
+            const engTotalUnits = mandatorySubjects.length + 20;
+            const engCompletedUnits = approvedMandatory + cappedCreditsEng;
+            const engPercent = Math.round((engCompletedUnits / engTotalUnits) * 100);
+
+            document.getElementById('kpi-eng-percent').textContent = `${engPercent}%`;
+            document.getElementById('kpi-eng-detail').textContent = `${approvedMandatory}/${mandatorySubjects.length} oblig. + ${totalElectiveCredits}/20 créd.`;
+            document.getElementById('kpi-eng-bar').style.width = `${engPercent}%`;
+
+            // Cálculo Porcentaje Título Analista: materias 1 a 23 (23 mat.) + Seminario 99 (1 mat.) + 4 créditos electivos nivel 3
+            const analystMandatoryIds = mandatorySubjects.filter(s => (parseInt(s.id) >= 1 && parseInt(s.id) <= 23) || s.id === '99').map(s => s.id);
+            const analystApprovedCount = analystMandatoryIds.filter(id => isApproved(id)).length;
+            const cappedCreditsAnalyst = Math.min(level3ElectiveCredits, 4);
+            const analystTotalUnits = analystMandatoryIds.length + 4; // 24 + 4 = 28
+            const analystCompletedUnits = analystApprovedCount + cappedCreditsAnalyst;
+            const analystPercent = Math.round((analystCompletedUnits / analystTotalUnits) * 100);
+
+            document.getElementById('kpi-analyst-percent').textContent = `${analystPercent}%`;
+            document.getElementById('kpi-analyst-detail').textContent = `${analystApprovedCount}/${analystMandatoryIds.length} mat. + ${level3ElectiveCredits}/4 créd. N3`;
+            document.getElementById('kpi-analyst-bar').style.width = `${analystPercent}%`;
+
+            // Promedio General
+            const avgEl = document.getElementById('kpi-avg');
+            const avgCountEl = document.getElementById('kpi-avg-count');
+            if (gradesCount > 0) {
+                const avg = (gradesSum / gradesCount).toFixed(2);
+                avgEl.textContent = avg;
+                avgCountEl.textContent = `Sobre ${gradesCount} ${gradesCount === 1 ? 'materia con nota' : 'materias con nota'}`;
+            } else {
+                avgEl.textContent = '-';
+                avgCountEl.textContent = 'Sin notas cargadas';
+            }
+
+            // Badge de Créditos
+            document.getElementById('kpi-credits-badge').textContent = `${totalElectiveCredits} / 20 pts (N3: ${level3ElectiveCredits}/4)`;
+
+            // Contadores de estado
+            document.getElementById('stat-approved').textContent = totalApprovedCount;
+            document.getElementById('stat-regular').textContent = regularCount;
+            document.getElementById('stat-taking').textContent = takingCount;
+            document.getElementById('stat-unlocked').textContent = unlockedCount;
+
+            // Actualizar selector dinámico de años registrados
+            updateYearFilterOptions();
+        }
+
+        function updateYearFilterOptions() {
+            const yearSelect = document.getElementById('year-filter');
+            const currentVal = yearSelect.value;
+            const yearsSet = new Set();
+
+            Object.values(appState.records).forEach(r => {
+                if (r.year) yearsSet.add(String(r.year));
+            });
+
+            const sortedYears = Array.from(yearsSet).sort((a, b) => b - a);
+            yearSelect.innerHTML = '<option value="ALL">Año cursado/aprobado: Todos</option>';
+            sortedYears.forEach(y => {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = `Año ${y}`;
+                yearSelect.appendChild(opt);
+            });
+
+            if (sortedYears.includes(currentVal)) {
+                yearSelect.value = currentVal;
+            } else {
+                uiState.yearFilter = 'ALL';
+            }
+        }
+
+        /**
+         * RENDERIZADO DE LA INTERFAZ (MALLA DE TARJETAS Y TABLA)
+         */
+        function getFilteredSubjects() {
+            return CURRICULUM_DATA.filter(sub => {
+                const evalData = evaluateSubjectStatus(sub);
+                const rec = evalData.record;
+
+                // Filtro de Nivel
+                if (uiState.levelFilter !== 'ALL') {
+                    if (uiState.levelFilter === 'ELECTIVAS') {
+                        if (!sub.isElective) return false;
+                    } else {
+                        if (sub.isElective || String(sub.level) !== uiState.levelFilter) return false;
+                    }
+                }
+
+                // Filtro de Estado
+                if (uiState.statusFilter !== 'ALL') {
+                    if (uiState.statusFilter === 'CURSADA_LIBRE') {
+                        if (!(rec.taken && rec.status === 'PENDIENTE')) return false;
+                    } else if (evalData.effectiveState !== uiState.statusFilter) {
+                        return false;
+                    }
+                }
+
+                // Filtro de Año
+                if (uiState.yearFilter !== 'ALL') {
+                    if (String(rec.year) !== uiState.yearFilter) return false;
+                }
+
+                // Búsqueda por texto o número
+                if (uiState.searchQuery.trim() !== '') {
+                    const q = uiState.searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    const nameNorm = sub.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    const codeNorm = sub.code.toLowerCase();
+                    if (!nameNorm.includes(q) && !codeNorm.includes(q)) return false;
+                }
+
+                return true;
+            });
+        }
+
+        function getBadgeConfig(effectiveState) {
+            switch (effectiveState) {
+                case 'APROBADA':
+                    return {
+                        label: 'Aprobada',
+                        icon: 'fa-circle-check',
+                        cardClass: 'bg-emerald-50/60 dark:bg-emerald-950/25 border-emerald-300 dark:border-emerald-800/80',
+                        badgeClass: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/80 dark:text-emerald-200 border-emerald-200 dark:border-emerald-700',
+                        accentBar: 'bg-emerald-500'
+                    };
+                case 'REGULAR':
+                    return {
+                        label: 'Regular',
+                        icon: 'fa-clock',
+                        cardClass: 'bg-amber-50/60 dark:bg-amber-950/25 border-amber-300 dark:border-amber-800/80',
+                        badgeClass: 'bg-amber-100 text-amber-800 dark:bg-amber-900/80 dark:text-amber-200 border-amber-200 dark:border-amber-700',
+                        accentBar: 'bg-amber-500'
+                    };
+                case 'CURSANDO':
+                    return {
+                        label: 'Cursando',
+                        icon: 'fa-book-open',
+                        cardClass: 'bg-blue-50/60 dark:bg-blue-950/25 border-blue-300 dark:border-blue-800/80',
+                        badgeClass: 'bg-blue-100 text-blue-800 dark:bg-blue-900/80 dark:text-blue-200 border-blue-200 dark:border-blue-700',
+                        accentBar: 'bg-blue-500'
+                    };
+                case 'HABILITADA':
+                    return {
+                        label: 'Habilitada',
+                        icon: 'fa-unlock',
+                        cardClass: 'bg-white dark:bg-slate-900 border-violet-200 dark:border-violet-800/70 hover:border-violet-400 dark:hover:border-violet-600',
+                        badgeClass: 'bg-violet-100 text-violet-800 dark:bg-violet-900/70 dark:text-violet-200 border-violet-200 dark:border-violet-700',
+                        accentBar: 'bg-violet-500'
+                    };
+                default: // BLOQUEADA
+                    return {
+                        label: 'Bloqueada',
+                        icon: 'fa-lock',
+                        cardClass: 'bg-slate-100/70 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 opacity-80 hover:opacity-100',
+                        badgeClass: 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-slate-300 dark:border-slate-700',
+                        accentBar: 'bg-slate-400 dark:bg-slate-600'
+                    };
+            }
+        }
+
+        function renderCorrelativeChips(subject) {
+            const hasReg = subject.reqRegular.length > 0;
+            const hasApp = subject.reqApproved.length > 0;
+
+            if (!hasReg && !hasApp) {
+                return `<span class="text-[11px] text-slate-400 dark:text-slate-500 italic">Sin correlativas previas</span>`;
+            }
+
+            let html = '<div class="flex flex-wrap gap-1 items-center">';
+
+            // Correlativas Regulares
+            subject.reqRegular.forEach(reqId => {
+                const met = isRegularOrApproved(reqId);
+                const reqSub = SUBJECT_MAP[reqId];
+                const title = `Regular: ${reqSub ? reqSub.name : reqId}`;
+                const colorClass = met
+                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800'
+                    : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800/70';
+                html += `<span title="${title}" class="px-1.5 py-0.5 text-[10px] font-bold rounded border ${colorClass}">R:${reqId}</span>`;
+            });
+
+            // Correlativas Aprobadas
+            subject.reqApproved.forEach(reqId => {
+                const met = isApproved(reqId);
+                const reqSub = SUBJECT_MAP[reqId];
+                const title = `Aprobada: ${reqSub ? reqSub.name : reqId}`;
+                const colorClass = met
+                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800'
+                    : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800/70';
+                html += `<span title="${title}" class="px-1.5 py-0.5 text-[10px] font-bold rounded border ${colorClass}">A:${reqId}</span>`;
+            });
+
+            html += '</div>';
+            return html;
+        }
+
+        function renderMainView() {
+            const container = document.getElementById('subjects-container');
+            const filtered = getFilteredSubjects();
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-12 text-center border border-slate-200 dark:border-slate-800">
+                        <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto mb-3 text-2xl">
+                            <i class="fa-solid fa-filter-circle-xmark"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-800 dark:text-slate-200">No se encontraron asignaturas</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Probá limpiando los filtros o buscando con otro término.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            if (uiState.viewMode === 'table') {
+                renderTableView(container, filtered);
+            } else {
+                renderCardsView(container, filtered);
+            }
+        }
+
+        function renderCardsView(container, subjects) {
+            // Agrupar por secciones: Niveles 1 a 5 y Electivas
+            const groups = [
+                { key: '1', title: '1° Nivel — Ciclo Básico', subtitle: '9 asignaturas obligatorias', items: subjects.filter(s => !s.isElective && s.level === 1) },
+                { key: '2', title: '2° Nivel — Formación Intermedia', subtitle: '8 asignaturas obligatorias', items: subjects.filter(s => !s.isElective && s.level === 2) },
+                { key: '3', title: '3° Nivel — Cierre Título Analista Universitario', subtitle: 'Requiere materias 1 a 23 + Seminario (99) + 4 créditos electivos N3', items: subjects.filter(s => !s.isElective && s.level === 3) },
+                { key: '4', title: '4° Nivel — Ciclo Superior', subtitle: '7 asignaturas obligatorias', items: subjects.filter(s => !s.isElective && s.level === 4) },
+                { key: '5', title: '5° Nivel — Graduación Ingeniería en Sistemas', subtitle: '6 asignaturas obligatorias + PPS + 20 créditos electivos', items: subjects.filter(s => !s.isElective && s.level === 5) },
+                { key: 'ELECTIVAS', title: 'Asignaturas Electivas Vigentes (Plan 2023)', subtitle: 'Mínimo 4 créditos de 3° Nivel para Analista • Mínimo 20 créditos totales para Ingeniería', items: subjects.filter(s => s.isElective) }
+            ].filter(g => g.items.length > 0);
+
+            container.innerHTML = groups.map(group => {
+                const cardsHtml = group.items.map(sub => {
+                    const evalData = evaluateSubjectStatus(sub);
+                    const rec = evalData.record;
+                    const cfg = getBadgeConfig(evalData.effectiveState);
+
+                    const metaInfo = sub.isElective
+                        ? `Nivel ${sub.level} • ${sub.modality} • <strong class="text-indigo-600 dark:text-indigo-400">${sub.credits} créd.</strong>`
+                        : `${sub.modality} • ${sub.hours} hs/sem`;
+
+                    return `
+                        <article
+                            data-subject-id="${sub.id}"
+                            onmouseenter="handleCardHover('${sub.id}')"
+                            onmouseleave="handleCardLeave()"
+                            onclick="openEditModal('${sub.id}')"
+                            class="subject-card card-transition relative rounded-2xl border p-4 cursor-pointer flex flex-col justify-between shadow-sm hover:shadow-md ${cfg.cardClass}"
+                        >
+                            <!-- Barra lateral de estado -->
+                            <div class="absolute left-0 top-3 bottom-3 w-1 rounded-r-full ${cfg.accentBar}"></div>
+
+                            <div>
+                                <!-- Cabecera de tarjeta -->
+                                <div class="flex items-center justify-between gap-2 mb-2 pl-1.5">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="px-2 py-0.5 text-xs font-extrabold rounded-lg bg-slate-900/5 dark:bg-white/10 text-slate-700 dark:text-slate-200">
+                                            ${sub.isElective ? `N${sub.level}` : `#${sub.code}`}
+                                        </span>
+                                        <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">${metaInfo}</span>
+                                    </div>
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${cfg.badgeClass}">
+                                        <i class="fa-solid ${cfg.icon} text-[10px]"></i>
+                                        ${cfg.label}
+                                    </span>
+                                </div>
+
+                                <!-- Nombre de la asignatura -->
+                                <h3 class="text-sm font-bold text-slate-900 dark:text-white leading-snug pl-1.5 mb-3">
+                                    ${sub.name}
+                                </h3>
+                            </div>
+
+                            <!-- Pie de tarjeta: Correlativas + Datos cargados (Nota, Año, Cursada) -->
+                            <div class="pl-1.5 pt-2.5 border-t border-slate-200/60 dark:border-slate-800/80 space-y-2">
+                                <div class="flex items-center justify-between gap-2">
+                                    ${renderCorrelativeChips(sub)}
+                                </div>
+
+                                <!-- Badges de Nota, Año y Cursada -->
+                                <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+                                    ${rec.grade ? `<span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-600 text-white shadow-xs">Nota: ${rec.grade}</span>` : ''}
+                                    ${rec.year ? `<span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300"><i class="fa-regular fa-calendar mr-1"></i>${rec.year}</span>` : ''}
+                                    ${rec.taken ? `<span class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-sky-100/80 dark:bg-sky-950 text-sky-700 dark:text-sky-300">Cursada</span>` : ''}
+                                    ${rec.notes ? `<span title="${rec.notes.replace(/"/g, '&quot;')}" class="px-1.5 py-0.5 rounded-md text-[11px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800"><i class="fa-regular fa-comment-dots"></i></span>` : ''}
+                                </div>
+
+                                ${evalData.specialWarnings.length > 0 && evalData.effectiveState !== 'APROBADA' ? `
+                                    <div class="text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-1 rounded-lg border border-amber-200/70 dark:border-amber-800/50 leading-tight">
+                                        <i class="fa-solid fa-circle-exclamation mr-1"></i>${evalData.specialWarnings[0]}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </article>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="space-y-3">
+                        <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 border-b border-slate-200 dark:border-slate-800 pb-2">
+                            <h2 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">${group.title}</h2>
+                            <span class="text-xs font-medium text-slate-500 dark:text-slate-400">${group.subtitle}</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+                            ${cardsHtml}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderTableView(container, subjects) {
+            const rowsHtml = subjects.map(sub => {
+                const evalData = evaluateSubjectStatus(sub);
+                const rec = evalData.record;
+                const cfg = getBadgeConfig(evalData.effectiveState);
+
+                return `
+                    <tr onclick="openEditModal('${sub.id}')" class="hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition border-b border-slate-100 dark:border-slate-800/80">
+                        <td class="py-3 px-3 text-xs font-bold text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                            ${sub.isElective ? `<span class="px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">Elec. N${sub.level}</span>` : `#${sub.code}`}
+                        </td>
+                        <td class="py-3 px-3">
+                            <div class="text-sm font-semibold text-slate-900 dark:text-white">${sub.name}</div>
+                            <div class="text-[11px] text-slate-400">${sub.isElective ? `${sub.credits} créditos` : `${sub.level}° Nivel • ${sub.hours} hs`} • Mod: ${sub.modality}</div>
+                        </td>
+                        <td class="py-3 px-3 whitespace-nowrap">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${cfg.badgeClass}">
+                                <i class="fa-solid ${cfg.icon} text-[10px]"></i>
+                                ${cfg.label}
+                            </span>
+                        </td>
+                        <td class="py-3 px-3 text-center whitespace-nowrap">
+                            ${rec.taken ? '<i class="fa-solid fa-check text-sky-600 dark:text-sky-400"></i>' : '<span class="text-slate-300 dark:text-slate-700">-</span>'}
+                        </td>
+                        <td class="py-3 px-3 text-center whitespace-nowrap">
+                            ${rec.grade ? `<span class="px-2 py-0.5 rounded font-bold text-xs bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">${rec.grade}</span>` : '<span class="text-slate-400 text-xs">-</span>'}
+                        </td>
+                        <td class="py-3 px-3 text-center whitespace-nowrap text-xs font-medium text-slate-600 dark:text-slate-300">
+                            ${rec.year || '-'}
+                        </td>
+                        <td class="py-3 px-3">
+                            ${renderCorrelativeChips(sub)}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    <th class="py-3 px-3">Cód / Nivel</th>
+                                    <th class="py-3 px-3">Asignatura</th>
+                                    <th class="py-3 px-3">Estado</th>
+                                    <th class="py-3 px-3 text-center">Cursada</th>
+                                    <th class="py-3 px-3 text-center">Nota</th>
+                                    <th class="py-3 px-3 text-center">Año</th>
+                                    <th class="py-3 px-3">Correlativas (R: Regular / A: Aprobada)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        /**
+         * INTERACTIVIDAD DE HOVER EN MALLA (ILUMINAR CORRELATIVAS Y DESTRABADAS)
+         */
+        function handleCardHover(subjectId) {
+            const sub = SUBJECT_MAP[subjectId];
+            if (!sub) return;
+
+            const prereqs = new Set([...sub.reqRegular, ...sub.reqApproved]);
+            const unlocks = new Set(getDirectDependents(subjectId));
+
+            document.querySelectorAll('.subject-card').forEach(card => {
+                const id = card.getAttribute('data-subject-id');
+                card.classList.remove('highlight-prereq', 'highlight-unlocks', 'highlight-selected');
+                if (id === subjectId) {
+                    card.classList.add('highlight-selected');
+                } else if (prereqs.has(id)) {
+                    card.classList.add('highlight-prereq');
+                } else if (unlocks.has(id)) {
+                    card.classList.add('highlight-unlocks');
+                }
+            });
+        }
+
+        function handleCardLeave() {
+            document.querySelectorAll('.subject-card').forEach(card => {
+                card.classList.remove('highlight-prereq', 'highlight-unlocks', 'highlight-selected');
+            });
+        }
+
+        /**
+         * MODAL DE EDICIÓN DE ASIGNATURA
+         */
+        function openEditModal(subjectId) {
+            const sub = SUBJECT_MAP[subjectId];
+            if (!sub) return;
+
+            const evalData = evaluateSubjectStatus(sub);
+            const rec = evalData.record;
+
+            document.getElementById('modal-subject-id').value = sub.id;
+            document.getElementById('modal-subject-code').textContent = sub.isElective ? `Electiva Nivel ${sub.level}` : `Materia #${sub.code}`;
+            document.getElementById('modal-subject-meta').textContent = sub.isElective
+                ? `Modalidad: ${sub.modality} • Otorga ${sub.credits} créditos`
+                : `${sub.level}° Nivel • Modalidad: ${sub.modality} • ${sub.hours} hs semanales`;
+            document.getElementById('modal-subject-name').textContent = sub.name;
+
+            // Renderizar detalle de correlativas en el modal
+            const prereqBox = document.getElementById('modal-prereq-box');
+            let prereqHtml = '';
+
+            if (sub.reqRegular.length === 0 && sub.reqApproved.length === 0 && evalData.specialWarnings.length === 0) {
+                prereqHtml = `<div class="text-emerald-600 dark:text-emerald-400 font-medium"><i class="fa-solid fa-check-circle mr-1.5"></i>Esta asignatura no requiere correlativas previas.</div>`;
+            } else {
+                if (sub.reqRegular.length > 0) {
+                    const list = sub.reqRegular.map(id => {
+                        const s = SUBJECT_MAP[id];
+                        const ok = isRegularOrApproved(id);
+                        return `<span class="${ok ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-amber-600 dark:text-amber-400 font-semibold'}">${ok ? '✓' : '✗'} #${id} ${s ? s.name : ''}</span>`;
+                    }).join('<br>');
+                    prereqHtml += `<div><strong class="text-slate-700 dark:text-slate-300">Requiere Regularizada:</strong><div class="pl-2 mt-0.5">${list}</div></div>`;
+                }
+                if (sub.reqApproved.length > 0) {
+                    const list = sub.reqApproved.map(id => {
+                        const s = SUBJECT_MAP[id];
+                        const ok = isApproved(id);
+                        return `<span class="${ok ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-rose-600 dark:text-rose-400 font-semibold'}">${ok ? '✓' : '✗'} #${id} ${s ? s.name : ''}</span>`;
+                    }).join('<br>');
+                    prereqHtml += `<div><strong class="text-slate-700 dark:text-slate-300">Requiere Aprobada:</strong><div class="pl-2 mt-0.5">${list}</div></div>`;
+                }
+                if (evalData.specialWarnings.length > 0) {
+                    prereqHtml += `<div class="pt-1 border-t border-slate-200 dark:border-slate-700 text-amber-700 dark:text-amber-400 font-medium">${evalData.specialWarnings.join('<br>')}</div>`;
+                }
+            }
+            prereqBox.innerHTML = prereqHtml;
+
+            // Seleccionar radio de estado
+            const radios = document.querySelectorAll('input[name="subject-status"]');
+            radios.forEach(r => {
+                r.checked = (r.value === rec.status);
+            });
+
+            // Checkbox cursada, nota y año
+            const takenCheckbox = document.getElementById('modal-taken-checkbox');
+            takenCheckbox.checked = rec.taken || ['CURSANDO', 'REGULAR', 'APROBADA'].includes(rec.status);
+
+            const gradeInput = document.getElementById('modal-grade');
+            gradeInput.value = rec.grade !== null ? rec.grade : '';
+
+            const yearInput = document.getElementById('modal-year');
+            yearInput.value = rec.year !== null ? rec.year : '';
+
+            document.getElementById('modal-notes').value = rec.notes || '';
+
+            // Mostrar modal
+            const modal = document.getElementById('edit-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeEditModal() {
+            const modal = document.getElementById('edit-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // Sincronizar comportamiento al cambiar estado dentro del modal
+        document.querySelectorAll('input[name="subject-status"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const val = e.target.value;
+                const takenCheckbox = document.getElementById('modal-taken-checkbox');
+                const yearInput = document.getElementById('modal-year');
+
+                if (['CURSANDO', 'REGULAR', 'APROBADA'].includes(val)) {
+                    takenCheckbox.checked = true;
+                    if (!yearInput.value) {
+                        yearInput.value = new Date().getFullYear();
+                    }
+                }
+            });
+        });
+
+        // Guardar formulario del modal
+        document.getElementById('edit-subject-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const subjectId = document.getElementById('modal-subject-id').value;
+            const status = document.querySelector('input[name="subject-status"]:checked').value;
+            let taken = document.getElementById('modal-taken-checkbox').checked;
+            const gradeRaw = document.getElementById('modal-grade').value;
+            const yearRaw = document.getElementById('modal-year').value;
+            const notes = document.getElementById('modal-notes').value.trim();
+
+            if (['CURSANDO', 'REGULAR', 'APROBADA'].includes(status)) {
+                taken = true;
+            }
+
+            const grade = gradeRaw !== '' ? parseFloat(gradeRaw) : null;
+            const year = yearRaw !== '' ? parseInt(yearRaw, 10) : null;
+
+            appState.records[subjectId] = {
+                status,
+                taken,
+                grade,
+                year,
+                notes
+            };
+
+            saveState();
+            updateKPIs();
+            renderMainView();
+            closeEditModal();
+            showToast(`Guardado: ${SUBJECT_MAP[subjectId].name}`, 'success');
+        });
+
+        /**
+         * CONTROLES DE FILTROS, VISTAS Y EXPORTACIÓN
+         */
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            uiState.searchQuery = e.target.value;
+            renderMainView();
+        });
+
+        document.getElementById('status-filter').addEventListener('change', (e) => {
+            uiState.statusFilter = e.target.value;
+            renderMainView();
+        });
+
+        document.getElementById('year-filter').addEventListener('change', (e) => {
+            uiState.yearFilter = e.target.value;
+            renderMainView();
+        });
+
+        document.getElementById('pps-checkbox').addEventListener('change', (e) => {
+            appState.ppsCompleted = e.target.checked;
+            saveState();
+            updateKPIs();
+            renderMainView();
+            showToast(appState.ppsCompleted ? 'PPS marcada como acreditada' : 'PPS marcada como pendiente', 'info');
+        });
+
+        // Pestañas de nivel
+        document.querySelectorAll('.level-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.level-tab').forEach(t => {
+                    t.classList.remove('bg-sky-600', 'text-white', 'shadow-sm');
+                    t.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300');
+                });
+                tab.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300');
+                tab.classList.add('bg-sky-600', 'text-white', 'shadow-sm');
+
+                uiState.levelFilter = tab.getAttribute('data-level');
+                renderMainView();
+            });
+        });
+
+        function setViewMode(mode) {
+            uiState.viewMode = mode;
+            const cardsBtn = document.getElementById('view-cards-btn');
+            const tableBtn = document.getElementById('view-table-btn');
+
+            if (mode === 'cards') {
+                cardsBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-400 shadow-sm transition flex items-center gap-1.5';
+                tableBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-1.5';
+            } else {
+                tableBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-400 shadow-sm transition flex items-center gap-1.5';
+                cardsBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-1.5';
+            }
+            renderMainView();
+        }
+
+        // Exportación JSON
+        function exportJSON() {
+            const dataStr = JSON.stringify(appState, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `avance_isi_plan2023_${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Respaldo JSON descargado', 'success');
+        }
+
+        // Exportación CSV
+        function exportCSV() {
+            const headers = ['Codigo', 'Nivel', 'Tipo', 'Asignatura', 'Modalidad', 'Horas_o_Creditos', 'Estado', 'Cursada', 'Nota_Final', 'Anio', 'Observaciones'];
+            const rows = CURRICULUM_DATA.map(sub => {
+                const evalData = evaluateSubjectStatus(sub);
+                const rec = evalData.record;
+                return [
+                    sub.code,
+                    sub.level,
+                    sub.isElective ? 'Electiva' : 'Obligatoria',
+                    `"${sub.name.replace(/"/g, '""')}"`,
+                    sub.modality,
+                    sub.isElective ? `${sub.credits} cred` : `${sub.hours} hs`,
+                    evalData.effectiveState,
+                    rec.taken ? 'Si' : 'No',
+                    rec.grade || '',
+                    rec.year || '',
+                    `"${(rec.notes || '').replace(/"/g, '""')}"`
+                ].join(',');
+            });
+
+            const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `historia_academica_isi2023_${new Date().toISOString().slice(0, 10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Planilla CSV exportada', 'success');
+        }
+
+        // Importación JSON
+        function importJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed && typeof parsed.records === 'object') {
+                        appState.records = parsed.records;
+                        appState.ppsCompleted = !!parsed.ppsCompleted;
+                        document.getElementById('pps-checkbox').checked = appState.ppsCompleted;
+                        saveState();
+                        updateKPIs();
+                        renderMainView();
+                        showToast('Progreso importado correctamente', 'success');
+                    } else {
+                        showToast('El archivo JSON no tiene un formato válido', 'error');
+                    }
+                } catch (err) {
+                    showToast('Error al leer el archivo JSON', 'error');
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        // Modal Reiniciar
+        function openResetModal() {
+            const modal = document.getElementById('reset-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeResetModal() {
+            const modal = document.getElementById('reset-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function confirmReset() {
+            appState.records = {};
+            appState.ppsCompleted = false;
+            document.getElementById('pps-checkbox').checked = false;
+            saveState();
+            updateKPIs();
+            renderMainView();
+            closeResetModal();
+            showToast('Se reinició todo el historial académico', 'info');
+        }
+
+        // Sistema de Notificaciones Toast
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const colors = {
+                success: 'bg-emerald-600 text-white',
+                error: 'bg-rose-600 text-white',
+                info: 'bg-slate-800 dark:bg-slate-700 text-white'
+            };
+            toast.className = `${colors[type] || colors.info} px-4 py-2.5 rounded-xl shadow-lg text-xs sm:text-sm font-medium flex items-center gap-2 transform transition-all duration-300 translate-y-2 opacity-0`;
+            toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-circle-xmark' : 'fa-circle-info'}"></i><span>${message}</span>`;
+            container.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 2800);
+        }
+
+        // Cerrar modales con tecla Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeEditModal();
+                closeResetModal();
+            }
+        });
+
+        // Inicialización al cargar la página
+        window.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            updateKPIs();
+            renderMainView();
+        });
+    </script>
+</body>
+</html>
